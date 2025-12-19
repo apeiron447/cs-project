@@ -17,25 +17,52 @@ def shutdown_db_session(exception=None):
 # AUTHENTICATION
 # ============================================
 
-# Demo login credentials (will be replaced by DB auth)
-USER_CREDENTIALS = {
-    "agnimithratheyyeth@gmail.com": "agnimithra230507",
-    "admin": "adminpass"
-}
-
-
 @app.route("/", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        from werkzeug.security import check_password_hash
+        from models import Student, Teacher
+        
         email_or_id = request.form.get("email_or_id", "").strip()
         password = request.form.get("password", "").strip()
-
-        if email_or_id in USER_CREDENTIALS and USER_CREDENTIALS[email_or_id] == password:
-            flash("Login successful!", "success")
-            return redirect(url_for("roles"))
-        else:
-            flash("Invalid Email/ID or Password.", "error")
+        
+        # Check admin credentials
+        if email_or_id == "admin" and password == "adminpass":
+            flash("Admin login successful!", "success")
+            return redirect(url_for("admin_dashboard"))
+        
+        # Check student by email
+        student = db_session.query(Student).filter(Student.email == email_or_id).first()
+        if student and student.password_hash:
+            if check_password_hash(student.password_hash, password):
+                flash(f"Welcome, {student.name}!", "success")
+                return redirect(url_for("student_dashboard", student_id=student.id))
+        
+        # Check student by admission number
+        if not student:
+            student = db_session.query(Student).filter(Student.admission_no == email_or_id).first()
+            if student and student.password_hash:
+                if check_password_hash(student.password_hash, password):
+                    flash(f"Welcome, {student.name}!", "success")
+                    return redirect(url_for("student_dashboard", student_id=student.id))
+        
+        # Check teacher by email
+        teacher = db_session.query(Teacher).filter(Teacher.email == email_or_id).first()
+        if teacher and teacher.password_hash:
+            if check_password_hash(teacher.password_hash, password):
+                flash(f"Welcome, {teacher.name}!", "success")
+                return redirect(url_for("teacher_dashboard", teacher_id=teacher.id))
+        
+        # Check teacher by faculty ID
+        if not teacher:
+            teacher = db_session.query(Teacher).filter(Teacher.faculty_id == email_or_id).first()
+            if teacher and teacher.password_hash:
+                if check_password_hash(teacher.password_hash, password):
+                    flash(f"Welcome, {teacher.name}!", "success")
+                    return redirect(url_for("teacher_dashboard", teacher_id=teacher.id))
+        
+        flash("Invalid Email/ID or Password.", "error")
 
     return render_template("login.html")
 
