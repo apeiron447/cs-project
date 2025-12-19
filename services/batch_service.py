@@ -66,9 +66,25 @@ class BatchService:
     
     @staticmethod
     def delete(db: Session, batch_id: int) -> bool:
-        """Delete a batch."""
+        """Delete a batch and all related records."""
+        from models import CoursePool, Preference, Allocation, Student
+        
         batch = db.query(Batch).filter(Batch.id == batch_id).first()
         if batch:
+            # Delete course pools for this batch
+            db.query(CoursePool).filter(CoursePool.batch_id == batch_id).delete()
+            
+            # Get students in this batch to delete their preferences and allocations
+            students = db.query(Student).filter(Student.batch_id == batch_id).all()
+            student_ids = [s.id for s in students]
+            
+            if student_ids:
+                # Delete allocations for these students
+                db.query(Allocation).filter(Allocation.student_id.in_(student_ids)).delete(synchronize_session='fetch')
+                # Delete preferences for these students
+                db.query(Preference).filter(Preference.student_id.in_(student_ids)).delete(synchronize_session='fetch')
+            
+            # Now delete the batch
             db.delete(batch)
             db.commit()
             return True

@@ -343,7 +343,7 @@
                         <form action="{{ url_for('admin_delete_batch') }}" method="POST" style="display:inline;">
                             <input type="hidden" name="batch_id" value="{{ batch.id }}">
                             <button type="submit" class="btn btn-danger"
-                                onclick="return confirm('Delete this batch? This cannot be undone.')">
+                                onclick="return confirm('⚠️ WARNING: Deleting this batch will also delete:\n\n• All course pools ({{ batch.course_pools|length }} courses)\n• All student preferences\n• All allocation results\n\nThis action cannot be undone!\n\nAre you sure you want to proceed?')">
                                 🗑️ Delete
                             </button>
                         </form>
