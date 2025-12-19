@@ -677,6 +677,50 @@ def admin_add_to_pool():
     return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/admin/remove-from-pool", methods=["POST"])
+def admin_remove_from_pool():
+    from models import CoursePool
+    
+    pool_id = request.form.get("pool_id")
+    if not pool_id:
+        flash("Pool ID required", "error")
+        return redirect(url_for("admin_dashboard"))
+    
+    try:
+        pool_entry = db_session.query(CoursePool).filter(CoursePool.id == int(pool_id)).first()
+        if pool_entry:
+            pool_entry.is_active = False
+            db_session.commit()
+            flash("Course removed from pool", "success")
+        else:
+            flash("Pool entry not found", "error")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/delete-batch", methods=["POST"])
+def admin_delete_batch():
+    from services import BatchService
+    
+    batch_id = request.form.get("batch_id")
+    if not batch_id:
+        flash("Batch ID required", "error")
+        return redirect(url_for("admin_dashboard"))
+    
+    try:
+        success = BatchService.delete(db_session, int(batch_id))
+        if success:
+            flash("Batch deleted successfully", "success")
+        else:
+            flash("Batch not found", "error")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_dashboard"))
+
+
 @app.route("/admin/allocation-report/<int:batch_id>")
 def admin_allocation_report(batch_id):
     from services import AllocationService, BatchService

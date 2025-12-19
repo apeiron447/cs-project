@@ -337,7 +337,38 @@
                         </form>
                         <a href="{{ url_for('admin_allocation_report', batch_id=batch.id) }}"
                             class="btn btn-secondary">📊 View Report</a>
+                        <form action="{{ url_for('admin_delete_batch') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="batch_id" value="{{ batch.id }}">
+                            <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Delete this batch? This cannot be undone.')">
+                                🗑️ Delete
+                            </button>
+                        </form>
                     </div>
+
+                    <!-- Courses in Pool -->
+                    {% if batch.course_pools %}
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 10px;">Courses in Pool:</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            {% for pool in batch.course_pools %}
+                            {% if pool.is_active and pool.course %}
+                            <div
+                                style="background: rgba(96, 165, 250, 0.2); padding: 5px 10px; border-radius: 5px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                                <span>{{ pool.course.code }}</span>
+                                <form action="{{ url_for('admin_remove_from_pool') }}" method="POST"
+                                    style="display:inline;">
+                                    <input type="hidden" name="pool_id" value="{{ pool.id }}">
+                                    <button type="submit"
+                                        style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.8rem;"
+                                        onclick="return confirm('Remove this course from pool?')">✕</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <!-- Add Course to Pool -->
                     <form class="course-pool-form" action="{{ url_for('admin_add_to_pool') }}" method="POST">
