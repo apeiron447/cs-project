@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .form-container { max-width: 600px; margin: 0 auto; padding: 25px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        h2 { color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], select {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .password-container { position: relative; }
+        .password-container input { padding-right: 40px; }
+        .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #aaa; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Student Registration Form</h2>
+    <form action="/api/register/student" method="POST">
+        <div class="form-group">
+            <label for="s-adm-no">Admission No. </label>
+            <input type="text" id="s-adm-no" name="admission_no" required>
+        </div>
+        <div class="form-group">
+            <label for="s-reg-no">Exam Register No.</label>
+            <input type="text" id="s-reg-no" name="exam_register_no" required>
+        </div>
+        <div class="form-group">
+            <label for="s-roll-no">Roll No.</label>
+            <input type="text" id="s-roll-no" name="roll_no" required>
+        </div>
+        <div class="form-group">
+            <label for="s-name">Name</label>
+            <input type="text" id="s-name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="s-email">Email ID </label>
+            <input type="email" id="s-email" name="email" required>
+        </div>
+        <div class="form-group password-container">
+            <label for="s-password">Password</label>
+            <input type="password" id="s-password" name="password" required>
+            <span class="toggle-password" onclick="togglePasswordVisibility('s-password')">Show</span>
+        </div>
+        <div class="form-group">
+            <label for="s-contact">Contact No.</label>
+            <input type="text" id="s-contact" name="contact_no" required>
+        </div>
+        <div class="form-group">
+            <label for="s-parent-dept">Department</label>
+            <select id="s-parent-dept" name="parent_department" required>
+                <option value="">Select Department</option>
+				<option value="Department of English">Department of English</option>
+				<option value="Department of Economics">Department of Economics</option>
+				<option value="Department of Journalism">Department of Journalism & Mass Communication </option>
+				<option value="Department of History">Department of History</option>
+				<option value="Department of Public Administration">Department of Public Administration </option>
+				<option value="Department of Biochemistry">Department of Biochemistry</option>
+				<option value="Department of Biotechnology">Department of Biotechnology</option>
+				<option value="Department of Physics">Department of Physics</option>
+				<option value="Department of Chemistry">Department of Chemistry</option>
+				<option value="Department of Computer Science & AI">Department of Computer Science & AI</option>
+				<option value="Department of Computer Application">Department of Computer Application</option>
+				<option value="Department of Mathematics">Department of Mathematics</option>
+				<option value="Department of Microbiology">Department of Microbiology</option>
+				<option value="Department of Psychology">Department of Psychology</option>
+				<option value="Department of Commerce(IF)">Department of Commerce(IF)</option>
+				<option value="Department of Commerce">Department of Commerce</option>
+				<option value="Department of Management Studies">Department of Management Studies</option>
+				<option value="Department of Multimedia">Department of Multimedia</option>
+				<option value="Department of Food Science & Technology">Department of Food Science & Technology</option>
+				<option value="Department of Islamic Studies">Department of Islamic Studies</option>
+				
+				
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="s-admission-year">Admission Year</label>
+            <select id="s-admission-year" name="admission_year" required>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="s-mark">Qualifying Exam Mark (FOR MERIT)</label>
+            <input type="number" id="s-mark" name="qualifying_mark" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="s-reservation">Reservation Category</label>
+            <select id="s-reservation" name="reservation_category" required>
+                <option value="General">General</option>
+                <option value="EWS">EWS</option>
+                <option value="OBC">OBC</option>
+                <option value="SC">SC</option>
+                <option value="ST">ST</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="s-dob">Date of Birth</label>
+            <input type="date" id="s-dob" name="date_of_birth" required>
+        </div>
+        <button type="submit">Register Student</button>
+    </form>
+</div>
+
+<script>
+    function togglePasswordVisibility(id) {
+        const passwordField = document.getElementById(id);
+        const toggleButton = passwordField.nextElementSibling;
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            toggleButton.textContent = 'Hide';
+        } else {
+            passwordField.type = 'password';
+            toggleButton.textContent = 'Show';
+        }
+    }
+</script>
+
+</body>
+</html>

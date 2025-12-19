@@ -1,0 +1,72 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    color: white;
+    background: linear-gradient(135deg, #4b006e, #0f2b66);
+    height: 100vh;
+    overflow-x: hidden;
+}
+
+.container {
+    text-align: center;
+    padding-top: 60px;
+}
+
+h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.3rem;
+    opacity: 0.9;
+    margin-bottom: 50px;
+}
+
+.roles-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 35px;
+    flex-wrap: wrap;
+    padding: 0 40px;
+}
+
+.role-card {
+    width: 180px;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    text-decoration: none;
+    color: white;
+    transition: 0.2s ease;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.role-card:hover {
+    transform: translateY(-8px);
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.icon {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.role-card h3 {
+    margin: 5px 0;
+    font-size: 1.2rem;
+}
+
+.role-card p {
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+.footer-note {
+    margin-top: 60px;
+    font-size: 1.1rem;
+    opacity: 0.8;
+}

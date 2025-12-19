@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programme</title>
+    <style>
+        body {
+            background-color: #ffffff; /* Full white background */
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .form-container {
+            background-color: #ffffff; /* White rounded card */
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #ffb380; /* Peach heading */
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        h2::after {
+            content: "";
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: #ffb380; /* Peach underline */
+            margin: 10px auto 20px auto;
+            border-radius: 2px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px; /* Even spacing */
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #ffb380; /* Peach button */
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ffa366; /* Slightly darker peach on hover */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Programme</h2>
+        <form action="{{ url_for('programme_form') }}" method="POST">
+            <label for="department">Select Department</label>
+            <select name="department" id="department" required>
+                <option value="">-- Select Department --</option>
+                <option value="CSE">Computer Science</option>
+                <option value="ECE">Electronics</option>
+                <option value="ME">Mechanical</option>
+            </select>
+
+            <label for="programme_name">Programme Name</label>
+            <input type="text" name="programme_name" id="programme_name" placeholder="Enter Programme Name" required>
+
+            <button type="submit">Save Programme</button>
+        </form>
+    </div>
+
+</body>
+</html>
+
+

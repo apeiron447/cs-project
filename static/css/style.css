@@ -1,0 +1,147 @@
+/* --- Variables --- */
+:root {
+    --primary-color: #9c27b0; /* Electric Purple - Vibrant */
+    --primary-hover: #7b1fa2;
+    --primary-shadow: rgba(156, 39, 176, 0.3); 
+    --card-background: #ffffff;
+    --body-start-color: #7f5a83; /* Muted Purple/Grey Start */
+    --body-end-color: #0d324d;   /* Deep Teal/Blue End */
+}
+
+/* General Reset and Colorful Body Styling */
+body {
+    /* Gradient Background - Purple to Deep Teal */
+    background: linear-gradient(135deg, var(--body-start-color), var(--body-end-color));
+    font-family: 'Poppins', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* Login Card */
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: var(--card-background);
+    padding: 45px; /* Increased padding */
+    border-radius: 18px; /* Softer, modern roundness */
+    /* Stronger shadow to pop against the dark gradient */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); 
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Hover: Slight lift effect */
+.login-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+/* Title */
+.login-card h1 {
+    margin-bottom: 35px; 
+    font-size: 32px; 
+    font-weight: 700; 
+    color: #333333;
+    letter-spacing: -0.5px; 
+}
+
+/* Flash Messages */
+.flash-container {
+    margin-bottom: 25px;
+}
+
+.flash {
+    padding: 16px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    text-align: left;
+}
+
+.flash.error {
+    background-color: #ffcccc; /* Light red */
+    color: #cc0000; /* Darker red */
+}
+
+.flash.success {
+    background-color: #ccffcc; /* Light green */
+    color: #008000; /* Darker green */
+}
+
+/* Labels & Inputs */
+label {
+    display: block;
+    font-weight: 600; 
+    text-align: left;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    color: #555555;
+    font-size: 16px;
+}
+
+input {
+    width: 100%;
+    padding: 14px 18px; 
+    border: 2px solid #eeeeee; 
+    border-radius: 10px;
+    font-size: 16px;
+    color: #333333;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus {
+    /* Electric Purple focus color */
+    border-color: var(--primary-color); 
+    outline: none;
+    box-shadow: 0 0 0 4px var(--primary-shadow); /* Stronger glow */
+    background-color: #f7f7ff; /* Subtle off-white change on focus */
+}
+
+/* Button */
+.btn {
+    margin-top: 40px; 
+    width: 100%;
+    /* Electric Purple Primary Color */
+    background-color: var(--primary-color); 
+    border: none;
+    padding: 15px;
+    border-radius: 10px;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    font-weight: 700; 
+    letter-spacing: 0.5px; 
+    transition: background-color 0.3s, transform 0.15s;
+    /* Purple Button shadow */
+    box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4); 
+}
+
+.btn:hover {
+    background-color: var(--primary-hover); 
+    box-shadow: 0 6px 20px rgba(156, 39, 176, 0.6);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* Support text (Utility Links) */
+.support {
+    margin-top: 30px;
+    font-size: 15px;
+}
+
+.support a {
+    color: var(--primary-color); 
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.support a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Selection</title>
+    <!-- Link to external CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/roles.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Education Management System</h1>
+        <p class="subtitle">Select your role to access the portal</p>
+
+        <div class="roles-wrapper">
+
+            <a class="role-card" href="{{ url_for('department_form') }}">
+                <span class="icon">🏫</span>
+                <h3>Department</h3>
+            </a>
+
+            <a class="role-card" href="{{ url_for('programme_form') }}">
+                <span class="icon">📘</span>
+                <h3>Programme</h3>
+            </a>
+
+            <a class="role-card" href="{{ url_for('course_form') }}">
+                <span class="icon">📚</span>
+                <h3>Course</h3>
+            </a>
+
+            <a class="role-card" href="{{ url_for('add_batch_form') }}">
+                <span class="icon">🎓</span>
+                <h3>Batch</h3>
+            </a>
+
+            <a class="role-card" href="{{ url_for('student_form') }}">
+                <span class="icon">👨‍🎓</span>
+                <h3>Student</h3>
+            </a>
+
+            <a class="role-card" href="{{ url_for('teacher_form') }}">
+                <span class="icon">👩‍🏫</span>
+                <h3>Teacher</h3>
+            </a>
+
+        </div>
+    </div>
+
+</body>
+
+</html>
