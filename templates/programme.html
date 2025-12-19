@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programme</title>
     <style>
         body {
-            background-color: #ffffff; /* Full white background */
+            background-color: #ffffff;
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -16,16 +17,16 @@
         }
 
         .form-container {
-            background-color: #ffffff; /* White rounded card */
+            background-color: #ffffff;
             padding: 30px 40px;
             border-radius: 15px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
             width: 400px;
         }
 
         h2 {
             text-align: center;
-            color: #ffb380; /* Peach heading */
+            color: #ffb380;
             margin-bottom: 10px;
             font-size: 24px;
         }
@@ -35,7 +36,7 @@
             display: block;
             width: 100%;
             height: 3px;
-            background-color: #ffb380; /* Peach underline */
+            background-color: #ffb380;
             margin: 10px auto 20px auto;
             border-radius: 2px;
         }
@@ -47,19 +48,21 @@
             color: #555;
         }
 
-        input[type="text"], select {
+        input[type="text"],
+        select {
             width: 100%;
             padding: 12px;
-            margin-bottom: 20px; /* Even spacing */
+            margin-bottom: 20px;
             border-radius: 8px;
             border: 1px solid #ccc;
             font-size: 16px;
+            box-sizing: border-box;
         }
 
         button {
             width: 100%;
             padding: 12px;
-            background-color: #ffb380; /* Peach button */
+            background-color: #ffb380;
             color: #ffffff;
             border: none;
             border-radius: 8px;
@@ -70,21 +73,47 @@
         }
 
         button:hover {
-            background-color: #ffa366; /* Slightly darker peach on hover */
+            background-color: #ffa366;
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
+
 <body>
 
     <div class="form-container">
         <h2>Programme</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
         <form action="{{ url_for('programme_form') }}" method="POST">
             <label for="department">Select Department</label>
             <select name="department" id="department" required>
                 <option value="">-- Select Department --</option>
-                <option value="CSE">Computer Science</option>
-                <option value="ECE">Electronics</option>
-                <option value="ME">Mechanical</option>
+                {% for dept in departments %}
+                <option value="{{ dept.code }}">{{ dept.name }}</option>
+                {% endfor %}
             </select>
 
             <label for="programme_name">Programme Name</label>
@@ -95,6 +124,5 @@
     </div>
 
 </body>
+
 </html>
-
-

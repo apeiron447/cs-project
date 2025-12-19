@@ -56,14 +56,17 @@ def support():
 
 @app.route("/department")
 def department_form():
-    return render_template("department.html")
+    from services import DepartmentService
+    departments = DepartmentService.get_all(db_session)
+    return render_template("department.html", departments=departments)
 
 
 @app.route("/course")
 def course_form():
-    from services import TeacherService
+    from services import TeacherService, DepartmentService
     teachers = TeacherService.get_all(db_session)
-    return render_template("course.html", teachers=teachers)
+    departments = DepartmentService.get_all(db_session)
+    return render_template("course.html", teachers=teachers, departments=departments)
 
 
 @app.route("/student")

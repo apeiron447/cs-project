@@ -1,40 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Department Profile</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .form-container { max-width: 600px; margin: 0 auto; padding: 25px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        h2 { color: #17a2b8; border-bottom: 2px solid #17a2b8; padding-bottom: 10px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
+        body {
+            font-family: sans-serif;
+            background-color: #f4f7f6;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 25px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #17a2b8;
+            border-bottom: 2px solid #17a2b8;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #555;
+        }
+
         input[type="text"] {
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background-color: #17a2b8; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #17a2b8;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Existing departments list */
+        .dept-list {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .dept-list h3 {
+            color: #17a2b8;
+            margin-bottom: 15px;
+        }
+
+        .dept-item {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .dept-code {
+            font-weight: bold;
+            color: #17a2b8;
+            background: #e3f2fd;
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="form-container">
-    <h2>Department </h2>
-    <form action="/api/admin/create-dept" method="POST">
-        <div class="form-group">
-            <label for="d-code">Department Code </label>
-            <input type="text" id="d-code" name="dept_code" required>
+    <div class="form-container">
+        <h2>Department</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="/api/admin/create-dept" method="POST">
+            <div class="form-group">
+                <label for="d-code">Department Code </label>
+                <input type="text" id="d-code" name="dept_code" placeholder="e.g., CS, ENG, PHY" required>
+            </div>
+            <div class="form-group">
+                <label for="d-name">Department Name</label>
+                <input type="text" id="d-name" name="dept_name" placeholder="e.g., Department of Computer Science"
+                    required>
+            </div>
+            <div class="form-group">
+                <label for="d-head">Department Head Name</label>
+                <input type="text" id="d-head" name="dept_head_name" placeholder="e.g., Dr. John Smith">
+            </div>
+            <button type="submit">Create Department</button>
+        </form>
+
+        {% if departments %}
+        <div class="dept-list">
+            <h3>Existing Departments ({{ departments|length }})</h3>
+            {% for dept in departments %}
+            <div class="dept-item">
+                <span>{{ dept.name }}</span>
+                <span class="dept-code">{{ dept.code }}</span>
+            </div>
+            {% endfor %}
         </div>
-        <div class="form-group">
-            <label for="d-name">Department Name</label>
-            <input type="text" id="d-name" name="dept_name" required>
-        </div>
-        <div class="form-group">
-            <label for="d-head">Department Head Name</label>
-            <input type="text" id="d-head" name="dept_head_name" required>
-        </div>
-        <button type="submit">Create Department</button>
-    </form>
-</div>
+        {% endif %}
+    </div>
 
 </body>
+
 </html>

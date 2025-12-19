@@ -1,100 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Registration</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .form-container { max-width: 600px; margin: 0 auto; padding: 25px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        h2 { color: #ffc107; border-bottom: 2px solid #ffc107; padding-bottom: 10px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
-        input[type="text"], input[type="email"], input[type="password"], select {
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background-color: #ffc107; color: #333; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        .password-container { position: relative; }
-        .password-container input { padding-right: 40px; }
-        .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #aaa; font-size: 14px; }
+        body {
+            font-family: sans-serif;
+            background-color: #f4f7f6;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 25px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #ffc107;
+            border-bottom: 2px solid #ffc107;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #ffc107;
+            color: #333;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .password-container input {
+            padding-right: 40px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="form-container">
-    <h2>Course Teacher Registration Form</h2>
-    <form action="/api/register/teacher" method="POST">
-        <div class="form-group">
-            <label for="t-id">Faculty/Employee ID </label>
-            <input type="text" id="t-id" name="faculty_id" required>
-        </div>
-        <div class="form-group">
-            <label for="t-name">Name</label>
-            <input type="text" id="t-name" name="name" required>
-        </div>
-        <div class="form-group">
-            <label for="t-email">Email ID </label>
-            <input type="email" id="t-email" name="email" required>
-        </div>
-        <div class="form-group password-container">
-            <label for="t-password">Password</label>
-            <input type="password" id="t-password" name="password" required>
-            <span class="toggle-password" onclick="togglePasswordVisibility('t-password')">Show</span>
-        </div>
-        <div class="form-group">
-            <label for="t-contact">Contact No.</label>
-            <input type="text" id="t-contact" name="contact_no" required>
-        </div>
-        <div class="form-group">
-            <label for="t-dept">Department</label>
-            <select id="t-dept" name="department" required>
-                <option value="">Select Department</option>
-				<option value="Department of English">Department of English</option>
-				<option value="Department of Economics">Department of Economics</option>
-				<option value="Department of Journalism">Department of Journalism & Mass Communication </option>
-				<option value="Department of History">Department of History</option>
-				<option value="Department of Public Administration">Department of Public Administration </option>
-				<option value="Department of Biochemistry">Department of Biochemistry</option>
-				<option value="Department of Biotechnology">Department of Biotechnology</option>
-				<option value="Department of Physics">Department of Physics</option>
-				<option value="Department of Chemistry">Department of Chemistry</option>
-				<option value="Department of Computer Science & AI">Department of Computer Science & AI</option>
-				<option value="Department of Computer Application">Department of Computer Application</option>
-				<option value="Department of Mathematics">Department of Mathematics</option>
-				<option value="Department of Microbiology">Department of Microbiology</option>
-				<option value="Department of Psychology">Department of Psychology</option>
-				<option value="Department of Commerce(IF)">Department of Commerce(IF)</option>
-				<option value="Department of Commerce">Department of Commerce</option>
-				<option value="Department of Management Studies">Department of Management Studies</option>
-				<option value="Department of Multimedia">Department of Multimedia</option>
-				<option value="Department of Food Science & Technology">Department of Food Science & Technology</option>
-				<option value="Department of Islamic Studies">Department of Islamic Studies</option>
-                
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="t-designation">Designation</label>
-            <select id="t-designation" name="designation" required>
-                <option value="AP">Assistant Professor</option>
-                <option value="P">Professor</option>
-            </select>
-        </div>
-        <button type="submit">Register Teacher</button>
-    </form>
-</div>
+    <div class="form-container">
+        <h2>Course Teacher Registration Form</h2>
 
-<script>
-    function togglePasswordVisibility(id) {
-        const passwordField = document.getElementById(id);
-        const toggleButton = passwordField.nextElementSibling;
-        if (passwordField.type === 'password') {
-            passwordField.type = 'text';
-            toggleButton.textContent = 'Hide';
-        } else {
-            passwordField.type = 'password';
-            toggleButton.textContent = 'Show';
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="/api/register/teacher" method="POST">
+            <div class="form-group">
+                <label for="t-id">Faculty/Employee ID </label>
+                <input type="text" id="t-id" name="faculty_id" required>
+            </div>
+            <div class="form-group">
+                <label for="t-name">Name</label>
+                <input type="text" id="t-name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="t-email">Email ID </label>
+                <input type="email" id="t-email" name="email" required>
+            </div>
+            <div class="form-group password-container">
+                <label for="t-password">Password</label>
+                <input type="password" id="t-password" name="password" required>
+                <span class="toggle-password" onclick="togglePasswordVisibility('t-password')">Show</span>
+            </div>
+            <div class="form-group">
+                <label for="t-contact">Contact No.</label>
+                <input type="text" id="t-contact" name="contact_no" required>
+            </div>
+            <div class="form-group">
+                <label for="t-dept">Department</label>
+                <select id="t-dept" name="department" required>
+                    <option value="">Select Department</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.name }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="t-designation">Designation</label>
+                <select id="t-designation" name="designation" required>
+                    <option value="AP">Assistant Professor</option>
+                    <option value="P">Professor</option>
+                </select>
+            </div>
+            <button type="submit">Register Teacher</button>
+        </form>
+    </div>
+
+    <script>
+        function togglePasswordVisibility(id) {
+            const passwordField = document.getElementById(id);
+            const toggleButton = passwordField.nextElementSibling;
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleButton.textContent = 'Hide';
+            } else {
+                passwordField.type = 'password';
+                toggleButton.textContent = 'Show';
+            }
         }
-    }
-</script>
+    </script>
 
 </body>
+
 </html>
