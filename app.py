@@ -799,6 +799,91 @@ def admin_update_seat_matrix(course_id):
     
     return redirect(url_for("admin_seat_matrix", course_id=course_id))
 
+
+# ============================================
+# STUDENT MANAGEMENT
+# ============================================
+
+@app.route("/admin/students")
+def admin_students():
+    from services import StudentService
+    students = StudentService.get_all(db_session)
+    return render_template("students_list.html", students=students)
+
+
+@app.route("/admin/student/<int:student_id>/edit")
+def admin_edit_student(student_id):
+    from services import StudentService
+    student = StudentService.get_by_id(db_session, student_id)
+    if not student:
+        flash("Student not found", "error")
+        return redirect(url_for("admin_students"))
+    return render_template("edit_student.html", student=student)
+
+
+@app.route("/admin/student/<int:student_id>/update", methods=["POST"])
+def admin_update_student(student_id):
+    from services import StudentService
+    from werkzeug.security import generate_password_hash
+    from models import ReservationCategory
+    
+    student = StudentService.get_by_id(db_session, student_id)
+    if not student:
+        flash("Student not found", "error")
+        return redirect(url_for("admin_students"))
+    
+    try:
+        student.admission_no = request.form.get("admission_no")
+        student.roll_no = request.form.get("roll_no")
+        student.name = request.form.get("name")
+        student.email = request.form.get("email")
+        student.contact_no = request.form.get("contact_no")
+        student.qualifying_marks = float(request.form.get("qualifying_marks", 0))
+        
+        category = request.form.get("reservation_category")
+        category_map = {
+            "General": ReservationCategory.GENERAL,
+            "EWS": ReservationCategory.EWS,
+            "OBC": ReservationCategory.OBC,
+            "SC": ReservationCategory.SC,
+            "ST": ReservationCategory.ST,
+        }
+        student.reservation_category = category_map.get(category, ReservationCategory.GENERAL)
+        
+        # Update password if provided
+        password = request.form.get("password")
+        if password:
+            student.password_hash = generate_password_hash(password)
+        
+        db_session.commit()
+        flash("Student updated successfully!", "success")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_students"))
+
+
+@app.route("/admin/student/delete", methods=["POST"])
+def admin_delete_student():
+    from services import StudentService
+    
+    student_id = request.form.get("student_id")
+    if not student_id:
+        flash("Student ID required", "error")
+        return redirect(url_for("admin_students"))
+    
+    try:
+        success = StudentService.delete(db_session, int(student_id))
+        if success:
+            flash("Student deleted successfully", "success")
+        else:
+            flash("Student not found", "error")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_students"))
+
+
 @app.route("/admin/allocation-report/<int:batch_id>")
 def admin_allocation_report(batch_id):
     from services import AllocationService, BatchService
