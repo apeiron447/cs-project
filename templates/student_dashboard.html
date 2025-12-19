@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+        }
+
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+
+        .welcome-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .welcome-card p {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            margin-bottom: 20px;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .allocation-result {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .allocation-result .status {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+
+        .allocation-result .course-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4ade80;
+            margin-bottom: 10px;
+        }
+
+        .allocation-result .preference-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(74, 222, 128, 0.2);
+            border-radius: 20px;
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .allocation-result.waitlisted .course-name {
+            color: #fbbf24;
+        }
+
+        .allocation-result.waitlisted .preference-badge {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .course-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .course-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .course-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateX(5px);
+        }
+
+        .course-item.selected {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .course-item .info h4 {
+            color: #e2e8f0;
+            margin-bottom: 5px;
+        }
+
+        .course-item .info p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .course-item .priority {
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #94a3b8;
+        }
+
+        .course-item.selected .priority {
+            background: #4ade80;
+            color: #000;
+        }
+
+        .preference-list {
+            counter-reset: pref-counter;
+        }
+
+        .preference-item {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid #4ade80;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preference-item::before {
+            counter-increment: pref-counter;
+            content: counter(pref-counter);
+            width: 30px;
+            height: 30px;
+            background: #4ade80;
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .preference-item .remove-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .alert-info {
+            background: rgba(96, 165, 250, 0.2);
+            border: 1px solid #60a5fa;
+            color: #60a5fa;
+        }
+
+        .form-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        #selected-courses {
+            min-height: 100px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h1>📚 Student Portal</h1>
+        <div class="user-info">
+            <span>{{ student.name }}</span>
+            <a href="{{ url_for('roles') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="welcome-card">
+            <h2>Welcome, {{ student.name }}! 👋</h2>
+            <p>{{ student.programme.name if student.programme else 'N/A' }} | {{ student.batch.start_year }}-{{
+                student.batch.end_year if student.batch else 'N/A' }} | Marks: {{ student.qualifying_marks }}</p>
+        </div>
+
+        <!-- Allocation Result (if exists) -->
+        {% if allocation %}
+        <div class="section">
+            <h3>🎯 Your Allocation Result</h3>
+            <div class="allocation-result {{ 'waitlisted' if allocation.status.value == 'Waitlisted' else '' }}">
+                <p class="status">
+                    {% if allocation.status.value == 'Allocated' %}
+                    ✅ You have been allocated to:
+                    {% else %}
+                    ⏳ You are on the waitlist for:
+                    {% endif %}
+                </p>
+                <p class="course-name">{{ allocation.course.name if allocation.course else 'N/A' }}</p>
+                <p style="color: #94a3b8; margin-bottom: 15px;">{{ allocation.course.code if allocation.course else ''
+                    }}</p>
+                <span class="preference-badge">Preference #{{ allocation.preference_number }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Preference Submission -->
+        <div class="section">
+            <h3>📝 Submit Course Preferences</h3>
+
+            {% if preferences %}
+            <div class="alert alert-info">
+                You have already submitted preferences. You can modify them below until the deadline.
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('student_submit_preferences') }}" method="POST" id="preference-form">
+                <input type="hidden" name="student_id" value="{{ student.id }}">
+                <input type="hidden" name="course_ids" id="course-ids-input" value="">
+
+                <p style="color: #94a3b8; margin-bottom: 15px;">Click on courses below to add them to your preferences
+                    (in order of priority):</p>
+
+                <h4 style="color: #e2e8f0; margin: 20px 0 10px;">Selected Preferences:</h4>
+                <div id="selected-courses" class="preference-list">
+                    {% if preferences %}
+                    {% for pref in preferences %}
+                    <div class="preference-item" data-course-id="{{ pref.course_id }}">
+                        <div style="display: flex; align-items: center;">
+                            <span style="margin-left: 10px;">{{ pref.course.code }} - {{ pref.course.name }}</span>
+                        </div>
+                        <button type="button" class="remove-btn" onclick="removeCourse({{ pref.course_id }})">✕
+                            Remove</button>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state" id="empty-preferences">
+                        <p>No courses selected yet. Click on courses below to add preferences.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h4 style="color: #e2e8f0; margin: 30px 0 10px;">Available Courses:</h4>
+                {% if available_courses %}
+                <div class="course-list" id="available-courses">
+                    {% for course in available_courses %}
+                    <div class="course-item {% if course.id in selected_course_ids %}selected{% endif %}"
+                        data-course-id="{{ course.id }}"
+                        onclick="toggleCourse({{ course.id }}, '{{ course.code }}', '{{ course.name }}')">
+                        <div class="info">
+                            <h4>{{ course.code }} - {{ course.name }}</h4>
+                            <p>{{ course.offering_department.name if course.offering_department else 'N/A' }} | {{
+                                course.max_capacity }} seats</p>
+                        </div>
+                        <div class="priority">+</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <p>No courses available for your batch yet.</p>
+                </div>
+                {% endif %}
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">💾 Save Preferences</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let selectedCourses = [
+            {% for pref in preferences %}
+        { id: { { pref.course_id } }, code: '{{ pref.course.code }}', name: '{{ pref.course.name }}' },
+        {% endfor %}
+    ];
+
+        function updateHiddenInput() {
+            document.getElementById('course-ids-input').value = selectedCourses.map(c => c.id).join(',');
+        }
+
+        function renderSelectedCourses() {
+            const container = document.getElementById('selected-courses');
+            if (selectedCourses.length === 0) {
+                container.innerHTML = '<div class="empty-state" id="empty-preferences"><p>No courses selected yet. Click on courses below to add preferences.</p></div>';
+            } else {
+                container.innerHTML = selectedCourses.map((course, index) => `
+                <div class="preference-item" data-course-id="${course.id}">
+                    <div style="display: flex; align-items: center;">
+                        <span style="margin-left: 10px;">${course.code} - ${course.name}</span>
+                    </div>
+                    <button type="button" class="remove-btn" onclick="removeCourse(${course.id})">✕ Remove</button>
+                </div>
+            `).join('');
+            }
+            updateHiddenInput();
+            updateCourseStyles();
+        }
+
+        function updateCourseStyles() {
+            document.querySelectorAll('.course-item').forEach(item => {
+                const courseId = parseInt(item.dataset.courseId);
+                if (selectedCourses.some(c => c.id === courseId)) {
+                    item.classList.add('selected');
+                    item.querySelector('.priority').textContent = '✓';
+                } else {
+                    item.classList.remove('selected');
+                    item.querySelector('.priority').textContent = '+';
+                }
+            });
+        }
+
+        function toggleCourse(id, code, name) {
+            const index = selectedCourses.findIndex(c => c.id === id);
+            if (index > -1) {
+                selectedCourses.splice(index, 1);
+            } else {
+                selectedCourses.push({ id, code, name });
+            }
+            renderSelectedCourses();
+        }
+
+        function removeCourse(id) {
+            selectedCourses = selectedCourses.filter(c => c.id !== id);
+            renderSelectedCourses();
+        }
+
+        function clearAll() {
+            selectedCourses = [];
+            renderSelectedCourses();
+        }
+
+        // Initialize
+        updateHiddenInput();
+        updateCourseStyles();
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4ade80;
+        }
+
+        .stat-card .label {
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            color: #e2e8f0;
+            border-bottom: 2px solid #4ade80;
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .batch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .batch-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .batch-card h3 {
+            color: #60a5fa;
+            margin-bottom: 10px;
+        }
+
+        .batch-card .info {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .batch-card .info span {
+            display: block;
+            margin: 5px 0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .course-pool-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: end;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .course-pool-form select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            min-width: 200px;
+        }
+
+        .course-pool-form select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        td {
+            color: #e2e8f0;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .badge-warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .badge-info {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h1>🎓 Admin Dashboard</h1>
+        <a href="{{ url_for('roles') }}">← Back to Roles</a>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number">{{ stats.departments }}</div>
+                <div class="label">Departments</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.programmes }}</div>
+                <div class="label">Programmes</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.students }}</div>
+                <div class="label">Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.courses }}</div>
+                <div class="label">Courses</div>
+            </div>
+        </div>
+
+        <!-- Batch Management & Allocation -->
+        <div class="section">
+            <h2>🎯 Batch Allocation Management</h2>
+
+            {% if batches %}
+            <div class="batch-grid">
+                {% for batch in batches %}
+                <div class="batch-card">
+                    <h3>{{ batch.programme.name if batch.programme else 'Unknown' }}</h3>
+                    <div class="info">
+                        <span>📅 {{ batch.start_year }} - {{ batch.end_year }}</span>
+                        <span>📚 Semester {{ batch.current_semester }}</span>
+                        <span>👥 {{ batch.students|length }} Students</span>
+                        <span>📖 {{ batch.course_pools|length }} Courses in Pool</span>
+                    </div>
+
+                    <div class="btn-group">
+                        <form action="{{ url_for('admin_run_allocation') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="batch_id" value="{{ batch.id }}">
+                            <button type="submit" class="btn btn-primary"
+                                onclick="return confirm('Run allocation for this batch? This will assign courses based on merit + preferences.')">
+                                ▶ Run Allocation
+                            </button>
+                        </form>
+                        <a href="{{ url_for('admin_allocation_report', batch_id=batch.id) }}"
+                            class="btn btn-secondary">📊 View Report</a>
+                    </div>
+
+                    <!-- Add Course to Pool -->
+                    <form class="course-pool-form" action="{{ url_for('admin_add_to_pool') }}" method="POST">
+                        <input type="hidden" name="batch_id" value="{{ batch.id }}">
+                        <select name="course_id" required>
+                            <option value="">Add course to pool...</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-secondary">+ Add</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="icon">📭</div>
+                <p>No batches created yet. <a href="{{ url_for('add_batch_form') }}" style="color: #4ade80;">Create a
+                        batch</a></p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Students -->
+        <div class="section">
+            <h2>👨‍🎓 Recent Students</h2>
+            {% if students %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Admission No</th>
+                            <th>Name</th>
+                            <th>Programme</th>
+                            <th>Marks</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students[:10] %}
+                        <tr>
+                            <td>{{ student.admission_no }}</td>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.programme.name if student.programme else 'N/A' }}</td>
+                            <td><span class="badge badge-success">{{ student.qualifying_marks }}</span></td>
+                            <td><span class="badge badge-info">{{ student.reservation_category.value if
+                                    student.reservation_category else 'General' }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="icon">👤</div>
+                <p>No students registered yet. <a href="{{ url_for('student_form') }}" style="color: #4ade80;">Register
+                        students</a></p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Links -->
+        <div class="section">
+            <h2>⚡ Quick Actions</h2>
+            <div class="btn-group">
+                <a href="{{ url_for('department_form') }}" class="btn btn-secondary">+ Department</a>
+                <a href="{{ url_for('programme_form') }}" class="btn btn-secondary">+ Programme</a>
+                <a href="{{ url_for('add_batch_form') }}" class="btn btn-secondary">+ Batch</a>
+                <a href="{{ url_for('course_form') }}" class="btn btn-secondary">+ Course</a>
+                <a href="{{ url_for('student_form') }}" class="btn btn-secondary">+ Student</a>
+                <a href="{{ url_for('teacher_form') }}" class="btn btn-secondary">+ Teacher</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

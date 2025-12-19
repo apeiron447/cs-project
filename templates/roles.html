@@ -5,18 +5,174 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Role Selection</title>
-    <!-- Link to external CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/roles.css') }}">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        .section-title {
+            color: #4ade80;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 30px 0 15px;
+        }
+
+        .roles-wrapper {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .role-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px 15px;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .role-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #4ade80;
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.2);
+        }
+
+        .role-card .icon {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .role-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .role-card.admin {
+            border-color: #ef4444;
+        }
+
+        .role-card.admin:hover {
+            border-color: #ef4444;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2);
+        }
+
+        .role-card.student {
+            border-color: #3b82f6;
+        }
+
+        .role-card.student:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+        }
+
+        .role-card.teacher {
+            border-color: #f59e0b;
+        }
+
+        .role-card.teacher:hover {
+            border-color: #f59e0b;
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.2);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            margin: 20px 0;
+        }
+
+        .dashboard-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .dashboard-btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .dashboard-btn.admin {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+        }
+
+        .dashboard-btn.admin:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .note {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+    </style>
 </head>
 
 <body>
 
     <div class="container">
-        <h1>Education Management System</h1>
-        <p class="subtitle">Select your role to access the portal</p>
+        <h1>🎓 Education Management System</h1>
+        <p class="subtitle">Choice-Based Course Selection Portal</p>
+
+        <!-- Admin Dashboard -->
+        <div class="dashboard-links">
+            <a class="dashboard-btn admin" href="{{ url_for('admin_dashboard') }}">
+                <span>🛡️</span> Admin Dashboard
+            </a>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="section-title">Registration & Master Data</p>
 
         <div class="roles-wrapper">
-
             <a class="role-card" href="{{ url_for('department_form') }}">
                 <span class="icon">🏫</span>
                 <h3>Department</h3>
@@ -37,17 +193,21 @@
                 <h3>Batch</h3>
             </a>
 
-            <a class="role-card" href="{{ url_for('student_form') }}">
+            <a class="role-card student" href="{{ url_for('student_form') }}">
                 <span class="icon">👨‍🎓</span>
-                <h3>Student</h3>
+                <h3>Register Student</h3>
             </a>
 
-            <a class="role-card" href="{{ url_for('teacher_form') }}">
+            <a class="role-card teacher" href="{{ url_for('teacher_form') }}">
                 <span class="icon">👩‍🏫</span>
-                <h3>Teacher</h3>
+                <h3>Register Teacher</h3>
             </a>
-
         </div>
+
+        <p class="note">
+            💡 After registering, students can access their dashboard at: <code>/student/dashboard/{id}</code><br>
+            Teachers can access: <code>/teacher/dashboard/{id}</code>
+        </p>
     </div>
 
 </body>

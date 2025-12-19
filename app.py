@@ -611,10 +611,163 @@ def api_get_course_pool(batch_id):
 
 
 # ============================================
+# DASHBOARD ROUTES
+# ============================================
+
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    from services import DepartmentService, ProgrammeService, StudentService, CourseService, BatchService
+    from models import Batch
+    
+    # Get stats
+    stats = {
+        "departments": len(DepartmentService.get_all(db_session)),
+        "programmes": len(ProgrammeService.get_all(db_session)),
+        "students": len(StudentService.get_all(db_session)),
+        "courses": len(CourseService.get_all(db_session)),
+    }
+    
+    # Get batches with eager loading
+    batches = db_session.query(Batch).all()
+    courses = CourseService.get_all(db_session)
+    students = StudentService.get_all(db_session)
+    
+    return render_template("admin_dashboard.html", 
+                          stats=stats, 
+                          batches=batches, 
+                          courses=courses,
+                          students=students)
+
+
+@app.route("/admin/run-allocation", methods=["POST"])
+def admin_run_allocation():
+    from services import AllocationService
+    
+    batch_id = request.form.get("batch_id")
+    if not batch_id:
+        flash("Batch ID required", "error")
+        return redirect(url_for("admin_dashboard"))
+    
+    try:
+        result = AllocationService.run_allocation(db_session, int(batch_id))
+        flash(f"Allocation complete! {result.allocated_count} allocated, {result.waitlisted_count} waitlisted", "success")
+    except Exception as e:
+        flash(f"Allocation error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/add-to-pool", methods=["POST"])
+def admin_add_to_pool():
+    from services import CourseService
+    
+    course_id = request.form.get("course_id")
+    batch_id = request.form.get("batch_id")
+    
+    if not course_id or not batch_id:
+        flash("Course and batch required", "error")
+        return redirect(url_for("admin_dashboard"))
+    
+    try:
+        CourseService.add_to_pool(db_session, int(course_id), int(batch_id))
+        flash("Course added to pool successfully!", "success")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/allocation-report/<int:batch_id>")
+def admin_allocation_report(batch_id):
+    from services import AllocationService, BatchService
+    
+    batch = BatchService.get_by_id(db_session, batch_id)
+    if not batch:
+        flash("Batch not found", "error")
+        return redirect(url_for("admin_dashboard"))
+    
+    report = AllocationService.generate_allocation_report(db_session, batch_id)
+    
+    return render_template("allocation_report.html", batch=batch, report=report)
+
+
+@app.route("/student/dashboard/<int:student_id>")
+def student_dashboard(student_id):
+    from services import StudentService, PreferenceService, CourseService, AllocationService
+    
+    student = StudentService.get_by_id(db_session, student_id)
+    if not student:
+        flash("Student not found", "error")
+        return redirect(url_for("roles"))
+    
+    # Get preferences
+    preferences = PreferenceService.get_student_preferences(db_session, student_id)
+    selected_course_ids = [p.course_id for p in preferences]
+    
+    # Get available courses for student's batch
+    available_courses = CourseService.get_pool_for_batch(db_session, student.batch_id)
+    
+    # Get allocation result
+    allocation = AllocationService.get_student_allocation(db_session, student_id)
+    
+    return render_template("student_dashboard.html",
+                          student=student,
+                          preferences=preferences,
+                          selected_course_ids=selected_course_ids,
+                          available_courses=available_courses,
+                          allocation=allocation)
+
+
+@app.route("/student/submit-preferences", methods=["POST"])
+def student_submit_preferences():
+    from services import PreferenceService
+    
+    student_id = request.form.get("student_id")
+    course_ids_str = request.form.get("course_ids", "")
+    
+    if not student_id:
+        flash("Student ID required", "error")
+        return redirect(url_for("roles"))
+    
+    # Parse course IDs
+    course_ids = [int(x) for x in course_ids_str.split(",") if x.strip()]
+    
+    if not course_ids:
+        flash("Please select at least one course", "error")
+        return redirect(url_for("student_dashboard", student_id=student_id))
+    
+    try:
+        PreferenceService.submit_preferences(db_session, int(student_id), course_ids)
+        flash(f"Preferences saved successfully! ({len(course_ids)} courses)", "success")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("student_dashboard", student_id=student_id))
+
+
+@app.route("/teacher/dashboard/<int:teacher_id>")
+def teacher_dashboard(teacher_id):
+    from services import TeacherService, CourseService
+    
+    teacher = TeacherService.get_by_id(db_session, teacher_id)
+    if not teacher:
+        flash("Teacher not found", "error")
+        return redirect(url_for("roles"))
+    
+    # Get courses taught by this teacher
+    courses = CourseService.get_by_teacher(db_session, teacher_id)
+    
+    return render_template("teacher_dashboard.html",
+                          teacher=teacher,
+                          courses=courses)
+
+
+# ============================================
 # RUN APP
 # ============================================
 
 if __name__ == "__main__":
     # Initialize database tables
     init_db()
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
+

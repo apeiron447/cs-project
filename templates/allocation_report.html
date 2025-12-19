@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allocation Report</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .report-header h2 {
+            color: #4ade80;
+            font-size: 2rem;
+        }
+
+        .report-header .subtitle {
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stat-card .label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .stat-card.success .number {
+            color: #4ade80;
+        }
+
+        .stat-card.warning .number {
+            color: #fbbf24;
+        }
+
+        .stat-card.info .number {
+            color: #60a5fa;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            margin-bottom: 15px;
+            color: #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+        }
+
+        td {
+            color: #e2e8f0;
+        }
+
+        .bar-chart {
+            margin-top: 15px;
+        }
+
+        .bar-item {
+            margin-bottom: 12px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #94a3b8;
+        }
+
+        .bar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 25px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .bar-fill.green {
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            color: #000;
+        }
+
+        .bar-fill.blue {
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            color: #fff;
+        }
+
+        .bar-fill.yellow {
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            color: #000;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h1>📊 Allocation Report</h1>
+        <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+    </nav>
+
+    <div class="container">
+        <div class="report-header">
+            <h2>{{ batch.programme.name if batch.programme else 'Batch' }} ({{ batch.start_year }}-{{ batch.end_year }})
+            </h2>
+            <p class="subtitle">Semester {{ batch.current_semester }} | Allocation Round {{ report.allocation_round }}
+            </p>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-grid">
+            <div class="stat-card info">
+                <div class="number">{{ report.total_students }}</div>
+                <div class="label">Total Students</div>
+            </div>
+            <div class="stat-card success">
+                <div class="number">{{ report.summary.allocated }}</div>
+                <div class="label">Allocated</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="number">{{ report.summary.waitlisted }}</div>
+                <div class="label">Waitlisted</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ report.summary.no_preference }}</div>
+                <div class="label">No Preference</div>
+            </div>
+        </div>
+
+        <!-- Category-wise Allocation -->
+        <div class="section">
+            <h3>📈 Category-wise Allocation</h3>
+            <div class="bar-chart">
+                {% for category, data in report.by_category.items() %}
+                <div class="bar-item">
+                    <div class="bar-label">
+                        <span>{{ category }}</span>
+                        <span>{{ data.allocated }} allocated</span>
+                    </div>
+                    <div class="bar-track">
+                        {% set total = data.allocated + data.waitlisted + data.none %}
+                        {% set pct = (data.allocated / total * 100) if total > 0 else 0 %}
+                        <div class="bar-fill green" style="width: {{ pct }}%">{{ pct|round(1) }}%</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Course-wise Allocation -->
+        <div class="section">
+            <h3>📚 Course-wise Allocation</h3>
+            {% if report.by_course %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course Code</th>
+                        <th>Course Name</th>
+                        <th>Allocated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course_id, data in report.by_course.items() %}
+                    <tr>
+                        <td>{{ data.code }}</td>
+                        <td>{{ data.name }}</td>
+                        <td>{{ data.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>No allocations made yet. Run allocation first.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Preference Distribution -->
+        <div class="section">
+            <h3>🎯 Preference Distribution</h3>
+            <div class="bar-chart">
+                {% set total_allocated = report.summary.allocated %}
+                {% for pref, count in report.by_preference.items() %}
+                <div class="bar-item">
+                    <div class="bar-label">
+                        <span>Preference {{ pref }}</span>
+                        <span>{{ count }} students</span>
+                    </div>
+                    <div class="bar-track">
+                        {% set pct = (count / total_allocated * 100) if total_allocated > 0 else 0 %}
+                        <div class="bar-fill blue" style="width: {{ pct }}%">{{ count }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
