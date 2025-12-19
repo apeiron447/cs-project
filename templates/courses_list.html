@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Courses</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .header h2 {
+            color: #e2e8f0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .course-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .course-row {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .course-row:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .course-info h3 {
+            color: #60a5fa;
+            margin-bottom: 5px;
+        }
+
+        .course-info p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .seat-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .seat-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .seat-badge.gen {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .seat-badge.ews {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+
+        .seat-badge.obc {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .seat-badge.sc {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .seat-badge.st {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h1>📚 Manage Courses</h1>
+        <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="header">
+            <h2>All Courses</h2>
+            <a href="{{ url_for('course_form') }}" class="btn btn-primary">+ Add Course</a>
+        </div>
+
+        {% if courses %}
+        <div class="course-grid">
+            {% for course in courses %}
+            <div class="course-row">
+                <div class="course-info">
+                    <h3>{{ course.code }} - {{ course.name }}</h3>
+                    <p>{{ course.offering_department.name if course.offering_department else 'N/A' }} | {{
+                        course.course_type.value if course.course_type else 'Minor' }} | Capacity: {{
+                        course.max_capacity }}</p>
+
+                    {% if course.seat_matrix %}
+                    <div class="seat-badges">
+                        <span class="seat-badge gen">GEN: {{ course.seat_matrix.general_seats }}</span>
+                        <span class="seat-badge ews">EWS: {{ course.seat_matrix.ews_seats }}</span>
+                        <span class="seat-badge obc">OBC: {{ course.seat_matrix.obc_seats }}</span>
+                        <span class="seat-badge sc">SC: {{ course.seat_matrix.sc_seats }}</span>
+                        <span class="seat-badge st">ST: {{ course.seat_matrix.st_seats }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="actions">
+                    <a href="{{ url_for('admin_seat_matrix', course_id=course.id) }}"
+                        class="btn btn-secondary btn-sm">⚙️ Seat Matrix</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No courses created yet.</p>
+            <a href="{{ url_for('course_form') }}" class="btn btn-primary" style="margin-top: 15px;">Create First
+                Course</a>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>

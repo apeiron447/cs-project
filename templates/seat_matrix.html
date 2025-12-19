@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Seat Matrix</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            color: #e2e8f0;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+
+        .course-info {
+            background: rgba(96, 165, 250, 0.2);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .course-info h2 {
+            color: #60a5fa;
+            font-size: 1.3rem;
+        }
+
+        .course-info p {
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .seat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .seat-input {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .seat-input label {
+            display: block;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .seat-input input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .seat-input input:focus {
+            outline: none;
+            border-color: #4ade80;
+        }
+
+        .seat-input.general {
+            border-left: 4px solid #4ade80;
+        }
+
+        .seat-input.ews {
+            border-left: 4px solid #a855f7;
+        }
+
+        .seat-input.obc {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .seat-input.sc {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .seat-input.st {
+            border-left: 4px solid #ef4444;
+        }
+
+        .total-display {
+            background: rgba(74, 222, 128, 0.2);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-display .label {
+            color: #94a3b8;
+        }
+
+        .total-display .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4ade80;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            margin-left: 10px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .hint {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <a href="{{ url_for('admin_courses') }}" class="back-link">← Back to Courses</a>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <h1>Configure Seat Matrix</h1>
+            <p class="subtitle">Manually set category-wise seat allocation</p>
+
+            <div class="course-info">
+                <h2>{{ course.code }} - {{ course.name }}</h2>
+                <p>{{ course.offering_department.name if course.offering_department else 'N/A' }} | Max Capacity: {{
+                    course.max_capacity }}</p>
+            </div>
+
+            <form action="{{ url_for('admin_update_seat_matrix', course_id=course.id) }}" method="POST" id="seat-form">
+                <div class="seat-grid">
+                    <div class="seat-input general">
+                        <label>General</label>
+                        <input type="number" name="general_seats" value="{{ seat_matrix.general_seats }}" min="0"
+                            required onchange="updateTotal()">
+                    </div>
+                    <div class="seat-input ews">
+                        <label>EWS</label>
+                        <input type="number" name="ews_seats" value="{{ seat_matrix.ews_seats }}" min="0" required
+                            onchange="updateTotal()">
+                    </div>
+                    <div class="seat-input obc">
+                        <label>OBC</label>
+                        <input type="number" name="obc_seats" value="{{ seat_matrix.obc_seats }}" min="0" required
+                            onchange="updateTotal()">
+                    </div>
+                    <div class="seat-input sc">
+                        <label>SC</label>
+                        <input type="number" name="sc_seats" value="{{ seat_matrix.sc_seats }}" min="0" required
+                            onchange="updateTotal()">
+                    </div>
+                    <div class="seat-input st">
+                        <label>ST</label>
+                        <input type="number" name="st_seats" value="{{ seat_matrix.st_seats }}" min="0" required
+                            onchange="updateTotal()">
+                    </div>
+                </div>
+
+                <div class="total-display">
+                    <span class="label">Total Seats</span>
+                    <span class="value" id="total-seats">{{ seat_matrix.general_seats + seat_matrix.ews_seats +
+                        seat_matrix.obc_seats + seat_matrix.sc_seats + seat_matrix.st_seats }}</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">💾 Save Configuration</button>
+                <button type="button" class="btn btn-secondary" onclick="resetToCapacity()">🔄 Auto-Calculate</button>
+            </form>
+
+            <p class="hint">
+                💡 Standard reservation: General 50%, OBC 27%, SC 15%, ST 7.5%, EWS 10% (varies by state)
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function updateTotal() {
+            const inputs = document.querySelectorAll('.seat-input input');
+            let total = 0;
+            inputs.forEach(input => {
+                total += parseInt(input.value) || 0;
+            });
+            document.getElementById('total-seats').textContent = total;
+        }
+
+        function resetToCapacity() {
+            const maxCapacity = {{ course.max_capacity }
+        };
+        const reservedPercent = {{ course.reserved_seats_percent or 50 }};
+
+        const reservedSeats = Math.floor(maxCapacity * reservedPercent / 100);
+        const generalSeats = maxCapacity - reservedSeats;
+
+        // Standard distribution
+        const scSeats = Math.floor(reservedSeats * 0.25);
+        const stSeats = Math.floor(reservedSeats * 0.125);
+        const obcSeats = Math.floor(reservedSeats * 0.45);
+        const ewsSeats = reservedSeats - scSeats - stSeats - obcSeats;
+
+        document.querySelector('input[name="general_seats"]').value = generalSeats;
+        document.querySelector('input[name="ews_seats"]').value = ewsSeats;
+        document.querySelector('input[name="obc_seats"]').value = obcSeats;
+        document.querySelector('input[name="sc_seats"]').value = scSeats;
+        document.querySelector('input[name="st_seats"]').value = stSeats;
+
+        updateTotal();
+    }
+    </script>
+
+</body>
+
+</html>

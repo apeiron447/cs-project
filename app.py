@@ -748,6 +748,57 @@ def admin_delete_batch():
     return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/admin/courses")
+def admin_courses():
+    from services import CourseService
+    courses = CourseService.get_all(db_session, active_only=False)
+    return render_template("courses_list.html", courses=courses)
+
+
+@app.route("/admin/course/<int:course_id>/seat-matrix")
+def admin_seat_matrix(course_id):
+    from services import CourseService
+    from models import SeatMatrix
+    
+    course = CourseService.get_by_id(db_session, course_id)
+    if not course:
+        flash("Course not found", "error")
+        return redirect(url_for("admin_courses"))
+    
+    seat_matrix = db_session.query(SeatMatrix).filter(SeatMatrix.course_id == course_id).first()
+    if not seat_matrix:
+        flash("Seat matrix not found for this course", "error")
+        return redirect(url_for("admin_courses"))
+    
+    return render_template("seat_matrix.html", course=course, seat_matrix=seat_matrix)
+
+
+@app.route("/admin/course/<int:course_id>/seat-matrix/update", methods=["POST"])
+def admin_update_seat_matrix(course_id):
+    from services import CourseService
+    
+    general_seats = request.form.get("general_seats", type=int)
+    ews_seats = request.form.get("ews_seats", type=int)
+    obc_seats = request.form.get("obc_seats", type=int)
+    sc_seats = request.form.get("sc_seats", type=int)
+    st_seats = request.form.get("st_seats", type=int)
+    
+    try:
+        CourseService.update_seat_matrix(
+            db_session, 
+            course_id,
+            general_seats=general_seats,
+            ews_seats=ews_seats,
+            obc_seats=obc_seats,
+            sc_seats=sc_seats,
+            st_seats=st_seats
+        )
+        flash("Seat matrix updated successfully!", "success")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_seat_matrix", course_id=course_id))
+
 @app.route("/admin/allocation-report/<int:batch_id>")
 def admin_allocation_report(batch_id):
     from services import AllocationService, BatchService
