@@ -278,27 +278,25 @@
         }
 
         function resetToCapacity() {
-            const maxCapacity = {{ course.max_capacity }
-        };
-        const reservedPercent = {{ course.reserved_seats_percent or 50 }};
+            const maxCapacity = parseInt("{{ course.max_capacity }}");
+            const reservedPercent = parseInt("{{ course.reserved_seats_percent or 50 }}");
 
-        const reservedSeats = Math.floor(maxCapacity * reservedPercent / 100);
-        const generalSeats = maxCapacity - reservedSeats;
+            const reservedSeats = Math.floor(maxCapacity * reservedPercent / 100);
+            const generalSeats = maxCapacity - reservedSeats;
 
-        // Standard distribution
-        const scSeats = Math.floor(reservedSeats * 0.25);
-        const stSeats = Math.floor(reservedSeats * 0.125);
-        const obcSeats = Math.floor(reservedSeats * 0.45);
-        const ewsSeats = reservedSeats - scSeats - stSeats - obcSeats;
+            const scSeats = Math.floor(reservedSeats * 0.25);
+            const stSeats = Math.floor(reservedSeats * 0.125);
+            const obcSeats = Math.floor(reservedSeats * 0.45);
+            const ewsSeats = reservedSeats - scSeats - stSeats - obcSeats;
 
-        document.querySelector('input[name="general_seats"]').value = generalSeats;
-        document.querySelector('input[name="ews_seats"]').value = ewsSeats;
-        document.querySelector('input[name="obc_seats"]').value = obcSeats;
-        document.querySelector('input[name="sc_seats"]').value = scSeats;
-        document.querySelector('input[name="st_seats"]').value = stSeats;
+            document.querySelector('input[name="general_seats"]').value = generalSeats;
+            document.querySelector('input[name="ews_seats"]').value = ewsSeats;
+            document.querySelector('input[name="obc_seats"]').value = obcSeats;
+            document.querySelector('input[name="sc_seats"]').value = scSeats;
+            document.querySelector('input[name="st_seats"]').value = stSeats;
 
-        updateTotal();
-    }
+            updateTotal();
+        }
     </script>
 
 </body>

@@ -800,6 +800,74 @@ def admin_update_seat_matrix(course_id):
     return redirect(url_for("admin_seat_matrix", course_id=course_id))
 
 
+@app.route("/admin/course/<int:course_id>/edit")
+def admin_edit_course(course_id):
+    from services import CourseService, DepartmentService, TeacherService
+    
+    course = CourseService.get_by_id(db_session, course_id)
+    if not course:
+        flash("Course not found", "error")
+        return redirect(url_for("admin_courses"))
+    
+    departments = DepartmentService.get_all(db_session)
+    teachers = TeacherService.get_all(db_session)
+    
+    return render_template("edit_course.html", course=course, departments=departments, teachers=teachers)
+
+
+@app.route("/admin/course/<int:course_id>/update", methods=["POST"])
+def admin_update_course(course_id):
+    from services import CourseService
+    from models import CourseType
+    
+    course = CourseService.get_by_id(db_session, course_id)
+    if not course:
+        flash("Course not found", "error")
+        return redirect(url_for("admin_courses"))
+    
+    try:
+        course.code = request.form.get("code", "").upper()
+        course.name = request.form.get("name")
+        course.description = request.form.get("description")
+        course.max_capacity = int(request.form.get("max_capacity", 30))
+        course.credits = int(request.form.get("credits", 3))
+        course.department_id = int(request.form.get("department_id"))
+        
+        teacher_id = request.form.get("teacher_id")
+        course.teacher_id = int(teacher_id) if teacher_id else None
+        
+        course_type = request.form.get("course_type")
+        course.course_type = CourseType.MDC if course_type == "MDC" else CourseType.MINOR
+        
+        db_session.commit()
+        flash("Course updated successfully!", "success")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_courses"))
+
+
+@app.route("/admin/course/delete", methods=["POST"])
+def admin_delete_course():
+    from services import CourseService
+    
+    course_id = request.form.get("course_id")
+    if not course_id:
+        flash("Course ID required", "error")
+        return redirect(url_for("admin_courses"))
+    
+    try:
+        success = CourseService.delete(db_session, int(course_id))
+        if success:
+            flash("Course deleted (deactivated) successfully", "success")
+        else:
+            flash("Course not found", "error")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+    
+    return redirect(url_for("admin_courses"))
+
+
 # ============================================
 # STUDENT MANAGEMENT
 # ============================================

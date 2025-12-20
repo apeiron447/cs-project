@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Course</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            color: #e2e8f0;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4ade80;
+        }
+
+        .form-group select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            margin-left: 10px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <a href="{{ url_for('admin_courses') }}" class="back-link">← Back to Courses</a>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <h1>Edit Course</h1>
+
+            <form action="{{ url_for('admin_update_course', course_id=course.id) }}" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Course Code</label>
+                        <input type="text" name="code" value="{{ course.code }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Course Type</label>
+                        <select name="course_type" required>
+                            <option value="Minor" {% if course.course_type and course.course_type.value=='Minor'
+                                %}selected{% endif %}>Minor</option>
+                            <option value="MDC" {% if course.course_type and course.course_type.value=='MDC'
+                                %}selected{% endif %}>MDC</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Course Name</label>
+                    <input type="text" name="name" value="{{ course.name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="3">{{ course.description or '' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max Capacity</label>
+                        <input type="number" name="max_capacity" value="{{ course.max_capacity }}" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Credits</label>
+                        <input type="number" name="credits" value="{{ course.credits or 3 }}" min="1" max="10">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Offering Department</label>
+                    <select name="department_id" required>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if course.department_id==dept.id %}selected{% endif %}>{{
+                            dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Assigned Teacher</label>
+                    <select name="teacher_id">
+                        <option value="">-- No Teacher --</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}" {% if course.teacher_id==teacher.id %}selected{% endif %}>{{
+                            teacher.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+                <a href="{{ url_for('admin_courses') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>

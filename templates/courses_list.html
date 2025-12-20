@@ -224,8 +224,15 @@
                     {% endif %}
                 </div>
                 <div class="actions">
+                    <a href="{{ url_for('admin_edit_course', course_id=course.id) }}"
+                        class="btn btn-secondary btn-sm">✏️ Edit</a>
                     <a href="{{ url_for('admin_seat_matrix', course_id=course.id) }}"
-                        class="btn btn-secondary btn-sm">⚙️ Seat Matrix</a>
+                        class="btn btn-secondary btn-sm">⚙️ Seats</a>
+                    <form action="{{ url_for('admin_delete_course') }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="course_id" value="{{ course.id }}">
+                        <button type="submit" class="btn btn-sm" style="background: #ef4444; color: #fff;"
+                            onclick="return confirm('⚠️ Delete this course?\\n\\nThis will also remove it from all course pools and may affect student preferences.')">🗑️</button>
+                    </form>
                 </div>
             </div>
             {% endfor %}
