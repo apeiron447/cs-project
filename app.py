@@ -61,7 +61,15 @@ def login():
                 if check_password_hash(teacher.user.password_hash, password):
                     flash(f"Welcome, {teacher.name}!", "success")
                     return redirect(url_for("teacher_dashboard", teacher_id=teacher.id))
-        
+
+        # Check department by code
+        from models import Department
+        dept = db_session.query(Department).filter(Department.code == email_or_id).first()
+        if dept and dept.password_hash:
+            if check_password_hash(dept.password_hash, password):
+                flash(f"Welcome, {dept.name}!", "success")
+                return redirect(url_for("department_dashboard", department_id=dept.id))
+
         flash("Invalid Email/ID or Password.", "error")
 
     return render_template("login.html")
@@ -999,8 +1007,10 @@ def student_dashboard(student_id):
             reverse=True
         )
 
-    # Get allocation result
-    allocation = AllocationService.get_student_allocation(db_session, student_id)
+    # Get allocation result (only if results are published)
+    allocation = None
+    if student.batch and student.batch.results_published:
+        allocation = AllocationService.get_student_allocation(db_session, student_id)
 
     return render_template("student_dashboard.html",
                           student=student,
@@ -1013,28 +1023,34 @@ def student_dashboard(student_id):
 
 @app.route("/student/submit-preferences", methods=["POST"])
 def student_submit_preferences():
-    from services import PreferenceService
-    
+    from services import PreferenceService, StudentService
+
     student_id = request.form.get("student_id")
     course_ids_str = request.form.get("course_ids", "")
-    
+
     if not student_id:
         flash("Student ID required", "error")
         return redirect(url_for("roles"))
-    
+
+    # Check if preferences are locked
+    student = StudentService.get_by_id(db_session, int(student_id))
+    if student and student.batch and student.batch.preferences_locked:
+        flash("Preferences are locked by the admin. You cannot modify them.", "error")
+        return redirect(url_for("student_dashboard", student_id=student_id))
+
     # Parse course IDs
     course_ids = [int(x) for x in course_ids_str.split(",") if x.strip()]
-    
+
     if not course_ids:
         flash("Please select at least one course", "error")
         return redirect(url_for("student_dashboard", student_id=student_id))
-    
+
     try:
         PreferenceService.submit_preferences(db_session, int(student_id), course_ids)
         flash(f"Preferences saved successfully! ({len(course_ids)} courses)", "success")
     except Exception as e:
         flash(f"Error: {str(e)}", "error")
-    
+
     return redirect(url_for("student_dashboard", student_id=student_id))
 
 
@@ -1053,6 +1069,232 @@ def teacher_dashboard(teacher_id):
     return render_template("teacher_dashboard.html",
                           teacher=teacher,
                           courses=courses)
+
+
+# ============================================
+# PREFERENCE LOCK & RESULT PUBLISH TOGGLES
+# ============================================
+
+@app.route("/admin/toggle-preferences-lock", methods=["POST"])
+def admin_toggle_preferences_lock():
+    from models import Batch
+
+    batch_id = request.form.get("batch_id")
+    if not batch_id:
+        flash("Batch ID required", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    batch = db_session.query(Batch).filter(Batch.id == int(batch_id)).first()
+    if not batch:
+        flash("Batch not found", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    batch.preferences_locked = not batch.preferences_locked
+    db_session.commit()
+    state = "locked" if batch.preferences_locked else "unlocked"
+    flash(f"Preferences {state} for {batch.programme.name} ({batch.start_year}-{batch.end_year})", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/toggle-results-published", methods=["POST"])
+def admin_toggle_results_published():
+    from models import Batch
+
+    batch_id = request.form.get("batch_id")
+    if not batch_id:
+        flash("Batch ID required", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    batch = db_session.query(Batch).filter(Batch.id == int(batch_id)).first()
+    if not batch:
+        flash("Batch not found", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    batch.results_published = not batch.results_published
+    db_session.commit()
+    state = "published" if batch.results_published else "unpublished"
+    flash(f"Results {state} for {batch.programme.name} ({batch.start_year}-{batch.end_year})", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+# ============================================
+# DEPARTMENT MODULE
+# ============================================
+
+@app.route("/admin/department/<int:department_id>/set-password", methods=["POST"])
+def admin_set_department_password(department_id):
+    from werkzeug.security import generate_password_hash
+    from models import Department
+
+    dept = db_session.query(Department).filter(Department.id == department_id).first()
+    if not dept:
+        flash("Department not found", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    password = request.form.get("password", "").strip()
+    if not password:
+        flash("Password required", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    dept.password_hash = generate_password_hash(password)
+    db_session.commit()
+    flash(f"Password set for department {dept.code}", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/department/dashboard/<int:department_id>")
+def department_dashboard(department_id):
+    from models import Department, Student, Course, Allocation, AllocationStatus
+
+    dept = db_session.query(Department).filter(Department.id == department_id).first()
+    if not dept:
+        flash("Department not found", "error")
+        return redirect(url_for("login"))
+
+    students = db_session.query(Student).filter(Student.department_id == department_id).all()
+    courses = db_session.query(Course).filter(Course.department_id == department_id).all()
+
+    # Allocation stats
+    total_allocations = 0
+    allocated_count = 0
+    waitlisted_count = 0
+    for s in students:
+        for a in s.allocations:
+            total_allocations += 1
+            if a.status == AllocationStatus.ALLOCATED:
+                allocated_count += 1
+            elif a.status == AllocationStatus.WAITLISTED:
+                waitlisted_count += 1
+
+    stats = {
+        "students": len(students),
+        "courses": len(courses),
+        "allocated": allocated_count,
+        "waitlisted": waitlisted_count,
+    }
+
+    return render_template("department_dashboard.html",
+                          department=dept,
+                          students=students,
+                          courses=courses,
+                          stats=stats)
+
+
+# ============================================
+# CSV EXPORT ROUTES
+# ============================================
+
+@app.route("/admin/export/allocation/<int:batch_id>")
+def admin_export_allocation_csv(batch_id):
+    import csv
+    import io
+    from flask import Response
+    from models import Allocation, Student, Course, Batch
+
+    batch = db_session.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        flash("Batch not found", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    allocations = (
+        db_session.query(Allocation)
+        .join(Student)
+        .filter(Student.batch_id == batch_id)
+        .all()
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Admission No", "Student Name", "Email", "Course Code", "Course Name", "Status", "Preference #"])
+    for a in allocations:
+        writer.writerow([
+            a.student.admission_no,
+            a.student.name,
+            a.student.email,
+            a.course.code if a.course else "",
+            a.course.name if a.course else "",
+            a.status.value,
+            a.preference_number,
+        ])
+
+    output.seek(0)
+    batch_label = f"{batch.programme.name}_{batch.start_year}" if batch.programme else f"batch_{batch_id}"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=allocation_{batch_label}.csv"},
+    )
+
+
+@app.route("/teacher/export/course/<int:course_id>")
+def teacher_export_course_csv(course_id):
+    import csv
+    import io
+    from flask import Response
+    from models import Allocation, AllocationStatus, Course
+
+    course = db_session.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        flash("Course not found", "error")
+        return redirect(url_for("login"))
+
+    allocated = [a for a in course.allocations if a.status == AllocationStatus.ALLOCATED]
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Roll No", "Name", "Email", "Category", "Preference #"])
+    for a in allocated:
+        writer.writerow([
+            a.student.roll_no,
+            a.student.name,
+            a.student.email,
+            a.student.reservation_category.value if a.student.reservation_category else "General",
+            a.preference_number,
+        ])
+
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=course_{course.code}_students.csv"},
+    )
+
+
+@app.route("/department/export/students/<int:department_id>")
+def department_export_students_csv(department_id):
+    import csv
+    import io
+    from flask import Response
+    from models import Department, Student
+
+    dept = db_session.query(Department).filter(Department.id == department_id).first()
+    if not dept:
+        flash("Department not found", "error")
+        return redirect(url_for("login"))
+
+    students = db_session.query(Student).filter(Student.department_id == department_id).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Admission No", "Roll No", "Name", "Email", "Programme", "Batch", "Qualifying Marks", "Category"])
+    for s in students:
+        writer.writerow([
+            s.admission_no,
+            s.roll_no,
+            s.name,
+            s.email,
+            s.programme.name if s.programme else "",
+            f"{s.batch.start_year}-{s.batch.end_year}" if s.batch else "",
+            s.qualifying_marks,
+            s.reservation_category.value if s.reservation_category else "General",
+        ])
+
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=department_{dept.code}_students.csv"},
+    )
 
 
 # ============================================

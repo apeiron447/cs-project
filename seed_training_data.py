@@ -183,6 +183,14 @@ def seed():
     db_session.commit()
     print(f"  Created {len(batches)} batches")
 
+    # ── set department passwords for login ────────────────────
+    print("Setting department passwords...")
+    dept_password_hash = generate_password_hash("dept123")
+    for dept in depts.values():
+        dept.password_hash = dept_password_hash
+    db_session.commit()
+    print(f"  Set password 'dept123' on {len(depts)} departments")
+
     # ── create teachers (one per dept for assignments) ───────
     print("Creating teachers...")
     teachers = {}

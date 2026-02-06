@@ -194,12 +194,20 @@
             {% if courses %}
             {% for course in courses %}
             <div class="course-card">
-                <h4>{{ course.code }} - {{ course.name }}</h4>
-                <div class="meta">
-                    <span>📖 {{ course.course_type.value if course.course_type else 'N/A' }}</span>
-                    <span>👥 Max Capacity: {{ course.max_capacity }}</span>
-                    <span class="student-count">{{ course.allocations|selectattr('status.value', 'eq',
-                        'Allocated')|list|length }}</span> students allocated
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <h4>{{ course.code }} - {{ course.name }}</h4>
+                        <div class="meta">
+                            <span>📖 {{ course.course_type.value if course.course_type else 'N/A' }}</span>
+                            <span>👥 Max Capacity: {{ course.max_capacity }}</span>
+                            <span class="student-count">{{ course.allocations|selectattr('status.value', 'eq',
+                                'Allocated')|list|length }}</span> students allocated
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <a href="{{ url_for('teacher_export_course_csv', course_id=course.id) }}" class="btn btn-secondary">📥 Export CSV</a>
+                        <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+                    </div>
                 </div>
 
                 {% set allocated_students = course.allocations|selectattr('status.value', 'eq', 'Allocated')|list %}

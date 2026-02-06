@@ -331,6 +331,27 @@
         #selected-courses {
             min-height: 100px;
         }
+
+        .btn-info-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid rgba(96, 165, 250, 0.5);
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+            font-weight: bold;
+            font-style: italic;
+            font-family: Georgia, serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .btn-info-icon:hover {
+            background: rgba(96, 165, 250, 0.3);
+        }
     </style>
 </head>
 
@@ -383,9 +404,15 @@
         <div class="section">
             <h3>📝 Submit Course Preferences</h3>
 
+            {% if student.batch and student.batch.preferences_locked %}
+            <div class="alert alert-error">
+                Preferences are locked by the admin. You cannot modify your selections at this time.
+            </div>
+            {% endif %}
+
             {% if preferences %}
             <div class="alert alert-info">
-                You have already submitted preferences. You can modify them below until the deadline.
+                You have already submitted preferences.{% if not (student.batch and student.batch.preferences_locked) %} You can modify them below until the deadline.{% endif %}
             </div>
             {% endif %}
 
@@ -424,6 +451,15 @@
                     {% set rec_score = rec.get('score', 0) %}
                     <div class="course-item {% if course.id in selected_course_ids %}selected{% endif %}"
                         data-course-id="{{ course.id }}"
+                        data-course-code="{{ course.code }}"
+                        data-course-name="{{ course.name }}"
+                        data-course-desc="{{ course.description or 'No description available.' }}"
+                        data-course-teacher="{{ course.teacher.name if course.teacher else 'TBA' }}"
+                        data-course-credits="{{ course.credits }}"
+                        data-course-difficulty="{{ course.difficulty_level or 'N/A' }}"
+                        data-course-dept="{{ course.offering_department.name if course.offering_department else 'N/A' }}"
+                        data-course-tags="{{ course.tags or '' }}"
+                        data-course-capacity="{{ course.max_capacity }}"
                         onclick="toggleCourse({{ course.id }}, '{{ course.code }}', '{{ course.name }}')">
                         <div class="info">
                             <h4>{{ course.code }} - {{ course.name }}
@@ -437,7 +473,10 @@
                             <p>{{ course.offering_department.name if course.offering_department else 'N/A' }} | {{
                                 course.max_capacity }} seats{% if course.difficulty_level %} | Difficulty: {{ course.difficulty_level }}/10{% endif %}</p>
                         </div>
-                        <div class="priority">+</div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button type="button" class="btn-info-icon" onclick="event.stopPropagation(); showCourseDetail(this.closest('.course-item'))" title="View details">i</button>
+                            <div class="priority">+</div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -449,10 +488,29 @@
                 {% endif %}
 
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">💾 Save Preferences</button>
-                    <button type="button" class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+                    <button type="submit" class="btn btn-primary" {% if student.batch and student.batch.preferences_locked %}disabled title="Preferences are locked"{% endif %}>💾 Save Preferences</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearAll()" {% if student.batch and student.batch.preferences_locked %}disabled{% endif %}>Clear All</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Course Detail Modal -->
+    <div id="course-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#1e293b; border-radius:15px; padding:30px; max-width:500px; width:90%; border:1px solid rgba(255,255,255,0.15); position:relative;">
+            <button onclick="closeCourseModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <h3 id="modal-title" style="color:#60a5fa; margin-bottom:20px;"></h3>
+            <div style="display:grid; gap:12px;">
+                <div><span style="color:#94a3b8;">Description:</span><p id="modal-desc" style="margin-top:4px;color:#e2e8f0;"></p></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div><span style="color:#94a3b8;">Teacher:</span><p id="modal-teacher" style="color:#e2e8f0;"></p></div>
+                    <div><span style="color:#94a3b8;">Credits:</span><p id="modal-credits" style="color:#e2e8f0;"></p></div>
+                    <div><span style="color:#94a3b8;">Difficulty:</span><p id="modal-difficulty" style="color:#e2e8f0;"></p></div>
+                    <div><span style="color:#94a3b8;">Capacity:</span><p id="modal-capacity" style="color:#e2e8f0;"></p></div>
+                    <div><span style="color:#94a3b8;">Department:</span><p id="modal-dept" style="color:#e2e8f0;"></p></div>
+                </div>
+                <div><span style="color:#94a3b8;">Tags:</span><p id="modal-tags" style="color:#e2e8f0;"></p></div>
+            </div>
         </div>
     </div>
 
@@ -517,6 +575,42 @@
             selectedCourses = [];
             renderSelectedCourses();
         }
+
+        // Course detail modal
+        function showCourseDetail(el) {
+            document.getElementById('modal-title').textContent = el.dataset.courseCode + ' - ' + el.dataset.courseName;
+            document.getElementById('modal-desc').textContent = el.dataset.courseDesc;
+            document.getElementById('modal-teacher').textContent = el.dataset.courseTeacher;
+            document.getElementById('modal-credits').textContent = el.dataset.courseCredits;
+            document.getElementById('modal-difficulty').textContent = el.dataset.courseDifficulty + '/10';
+            document.getElementById('modal-capacity').textContent = el.dataset.courseCapacity + ' seats';
+            document.getElementById('modal-dept').textContent = el.dataset.courseDept;
+            document.getElementById('modal-tags').textContent = el.dataset.courseTags || 'None';
+            var modal = document.getElementById('course-modal');
+            modal.style.display = 'flex';
+        }
+
+        function closeCourseModal() {
+            document.getElementById('course-modal').style.display = 'none';
+        }
+
+        document.getElementById('course-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeCourseModal();
+        });
+
+        {% if student.batch and student.batch.preferences_locked %}
+        // Disable course toggling when locked
+        document.querySelectorAll('.course-item').forEach(function(el) {
+            el.style.cursor = 'default';
+            el.onclick = function(e) {
+                // Only allow info button clicks
+                if (e.target.closest('.btn-info-icon')) {
+                    showCourseDetail(el);
+                }
+            };
+        });
+        document.querySelectorAll('.remove-btn').forEach(function(btn) { btn.disabled = true; });
+        {% endif %}
 
         // Initialize
         updateHiddenInput();

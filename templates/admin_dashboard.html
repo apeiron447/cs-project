@@ -340,6 +340,18 @@
                         </form>
                         <a href="{{ url_for('admin_allocation_report', batch_id=batch.id) }}"
                             class="btn btn-secondary">📊 View Report</a>
+                        <form action="{{ url_for('admin_toggle_preferences_lock') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="batch_id" value="{{ batch.id }}">
+                            <button type="submit" class="btn btn-secondary">
+                                {% if batch.preferences_locked %}🔓 Unlock Prefs{% else %}🔒 Lock Prefs{% endif %}
+                            </button>
+                        </form>
+                        <form action="{{ url_for('admin_toggle_results_published') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="batch_id" value="{{ batch.id }}">
+                            <button type="submit" class="btn btn-secondary">
+                                {% if batch.results_published %}🙈 Unpublish{% else %}📢 Publish Results{% endif %}
+                            </button>
+                        </form>
                         <form action="{{ url_for('admin_delete_batch') }}" method="POST" style="display:inline;">
                             <input type="hidden" name="batch_id" value="{{ batch.id }}">
                             <button type="submit" class="btn btn-danger"

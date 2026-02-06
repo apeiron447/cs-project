@@ -190,7 +190,11 @@
 
     <nav class="navbar">
         <h1>📊 Allocation Report</h1>
-        <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+        <div style="display:flex; gap:10px;">
+            <a href="{{ url_for('admin_export_allocation_csv', batch_id=batch.id) }}" style="color:#fff; text-decoration:none; padding:8px 16px; border-radius:5px; background:rgba(255,255,255,0.1);">📥 Export CSV</a>
+            <button onclick="window.print()" style="color:#fff; padding:8px 16px; border-radius:5px; background:rgba(255,255,255,0.1); border:none; cursor:pointer;">🖨️ Print</button>
+            <a href="{{ url_for('admin_dashboard') }}" style="color:#fff; text-decoration:none; padding:8px 16px; border-radius:5px; background:rgba(255,255,255,0.1);">← Back to Dashboard</a>
+        </div>
     </nav>
 
     <div class="container">

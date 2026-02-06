@@ -80,6 +80,7 @@ class Department(Base):
     code = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(255), nullable=False)
     head_name = Column(String(255), nullable=True)
+    password_hash = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -131,6 +132,8 @@ class Batch(Base):
     start_year = Column(Integer, nullable=False)
     end_year = Column(Integer, nullable=False)
     current_semester = Column(Integer, default=1)
+    preferences_locked = Column(Boolean, default=False)
+    results_published = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Constraints
