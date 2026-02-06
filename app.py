@@ -838,7 +838,10 @@ def admin_update_course(course_id):
         
         course_type = request.form.get("course_type")
         course.course_type = CourseType.MDC if course_type == "MDC" else CourseType.MINOR
-        
+
+        course.difficulty_level = int(request.form.get("difficulty_level", 5))
+        course.tags = request.form.get("tags", "").strip() or None
+
         db_session.commit()
         flash("Course updated successfully!", "success")
     except Exception as e:
@@ -968,29 +971,44 @@ def admin_allocation_report(batch_id):
 
 @app.route("/student/dashboard/<int:student_id>")
 def student_dashboard(student_id):
-    from services import StudentService, PreferenceService, CourseService, AllocationService
-    
+    from services import StudentService, PreferenceService, CourseService, AllocationService, RecommendationService
+
     student = StudentService.get_by_id(db_session, student_id)
     if not student:
         flash("Student not found", "error")
         return redirect(url_for("roles"))
-    
+
     # Get preferences
     preferences = PreferenceService.get_student_preferences(db_session, student_id)
     selected_course_ids = [p.course_id for p in preferences]
-    
+
     # Get available courses for student's batch
     available_courses = CourseService.get_pool_for_batch(db_session, student.batch_id)
-    
+
+    # Get AI recommendations for available courses
+    recommendations = {}
+    if available_courses:
+        course_ids = [c.id for c in available_courses]
+        recommendations = RecommendationService.get_recommendations_for_student(
+            db_session, student_id, course_ids
+        )
+        # Sort courses by recommendation score (highest first)
+        available_courses = sorted(
+            available_courses,
+            key=lambda c: recommendations.get(c.id, {}).get("score", 0),
+            reverse=True
+        )
+
     # Get allocation result
     allocation = AllocationService.get_student_allocation(db_session, student_id)
-    
+
     return render_template("student_dashboard.html",
                           student=student,
                           preferences=preferences,
                           selected_course_ids=selected_course_ids,
                           available_courses=available_courses,
-                          allocation=allocation)
+                          allocation=allocation,
+                          recommendations=recommendations)
 
 
 @app.route("/student/submit-preferences", methods=["POST"])
@@ -1035,6 +1053,169 @@ def teacher_dashboard(teacher_id):
     return render_template("teacher_dashboard.html",
                           teacher=teacher,
                           courses=courses)
+
+
+# ============================================
+# AI RECOMMENDATION MODULE
+# ============================================
+
+@app.route("/admin/ai-status")
+def admin_ai_status():
+    from services.ai_trainer import get_model_status
+    from models import Allocation, StudentAcademicHistory
+
+    status = get_model_status()
+    status["total_allocations"] = db_session.query(Allocation).count()
+    status["students_with_academic_data"] = (
+        db_session.query(StudentAcademicHistory.student_id)
+        .distinct()
+        .count()
+    )
+    return render_template("ai_status.html", status=status)
+
+
+@app.route("/admin/train-ai-model", methods=["POST"])
+def admin_train_ai_model():
+    from services.ai_trainer import train_model
+
+    result = train_model(db_session)
+    if result.get("success"):
+        flash(
+            f"Model trained successfully on {result['samples']} samples! "
+            f"R² score: {result.get('cv_r2_score', 'N/A')}",
+            "success",
+        )
+    else:
+        flash(f"Training failed: {result.get('error', 'Unknown error')}", "error")
+
+    return redirect(url_for("admin_ai_status"))
+
+
+@app.route("/admin/student/<int:student_id>/academic", methods=["GET", "POST"])
+def admin_student_academic(student_id):
+    from services import StudentService
+    from models import StudentAcademicHistory, StudentSubjectMark, StudentInterest
+
+    student = StudentService.get_by_id(db_session, student_id)
+    if not student:
+        flash("Student not found", "error")
+        return redirect(url_for("admin_students"))
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "add_academic":
+            semester = int(request.form.get("semester", 1))
+            cgpa = float(request.form.get("cgpa", 0))
+            sgpa = float(request.form.get("sgpa", 0))
+            total_marks = float(request.form.get("total_marks", 0))
+
+            existing = (
+                db_session.query(StudentAcademicHistory)
+                .filter_by(student_id=student_id, semester=semester)
+                .first()
+            )
+            if existing:
+                existing.cgpa = cgpa
+                existing.sgpa = sgpa
+                existing.total_marks = total_marks
+            else:
+                entry = StudentAcademicHistory(
+                    student_id=student_id,
+                    semester=semester,
+                    cgpa=cgpa,
+                    sgpa=sgpa,
+                    total_marks=total_marks,
+                )
+                db_session.add(entry)
+            db_session.commit()
+            flash(f"Academic history for semester {semester} saved!", "success")
+
+        elif action == "add_subject":
+            subject_name = request.form.get("subject_name", "").strip()
+            marks_obtained = float(request.form.get("marks_obtained", 0))
+            max_marks = float(request.form.get("max_marks", 100))
+            grade = request.form.get("grade", "").strip()
+            semester = int(request.form.get("subject_semester", 1))
+
+            mark = StudentSubjectMark(
+                student_id=student_id,
+                subject_name=subject_name,
+                marks_obtained=marks_obtained,
+                max_marks=max_marks,
+                grade=grade or None,
+                semester=semester,
+            )
+            db_session.add(mark)
+            db_session.commit()
+            flash(f"Subject mark for '{subject_name}' added!", "success")
+
+        elif action == "add_interest":
+            interest_tag = request.form.get("interest_tag", "").strip().lower()
+            if interest_tag:
+                existing = (
+                    db_session.query(StudentInterest)
+                    .filter_by(student_id=student_id, interest_tag=interest_tag)
+                    .first()
+                )
+                if not existing:
+                    interest = StudentInterest(
+                        student_id=student_id, interest_tag=interest_tag
+                    )
+                    db_session.add(interest)
+                    db_session.commit()
+                    flash(f"Interest '{interest_tag}' added!", "success")
+                else:
+                    flash("Interest already exists", "info")
+
+        elif action == "delete_interest":
+            interest_id = int(request.form.get("interest_id", 0))
+            interest = db_session.query(StudentInterest).filter_by(id=interest_id).first()
+            if interest:
+                db_session.delete(interest)
+                db_session.commit()
+                flash("Interest removed", "success")
+
+        elif action == "delete_subject":
+            mark_id = int(request.form.get("mark_id", 0))
+            mark = db_session.query(StudentSubjectMark).filter_by(id=mark_id).first()
+            if mark:
+                db_session.delete(mark)
+                db_session.commit()
+                flash("Subject mark removed", "success")
+
+        elif action == "delete_academic":
+            history_id = int(request.form.get("history_id", 0))
+            entry = db_session.query(StudentAcademicHistory).filter_by(id=history_id).first()
+            if entry:
+                db_session.delete(entry)
+                db_session.commit()
+                flash("Academic history entry removed", "success")
+
+        return redirect(url_for("admin_student_academic", student_id=student_id))
+
+    # GET: load existing data
+    academic_history = (
+        db_session.query(StudentAcademicHistory)
+        .filter_by(student_id=student_id)
+        .order_by(StudentAcademicHistory.semester)
+        .all()
+    )
+    subject_marks = (
+        db_session.query(StudentSubjectMark)
+        .filter_by(student_id=student_id)
+        .order_by(StudentSubjectMark.semester)
+        .all()
+    )
+    interests = db_session.query(StudentInterest).filter_by(student_id=student_id).all()
+
+    return render_template(
+        "student_academic.html",
+        student=student,
+        academic_history=academic_history,
+        subject_marks=subject_marks,
+        interests=interests,
+    )
 
 
 # ============================================

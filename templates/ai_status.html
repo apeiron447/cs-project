@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Status</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: #e2e8f0;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .status-item .label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .status-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .status-item .value.green {
+            color: #4ade80;
+        }
+
+        .status-item .value.red {
+            color: #ef4444;
+        }
+
+        .status-item .value.blue {
+            color: #60a5fa;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .alert-info {
+            background: rgba(96, 165, 250, 0.2);
+            border: 1px solid #60a5fa;
+            color: #60a5fa;
+        }
+
+        .info-text {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .detail-row .key {
+            color: #94a3b8;
+        }
+
+        .detail-row .val {
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-link">&larr; Back to Dashboard</a>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <h1>AI Recommendation Module</h1>
+
+        <div class="card">
+            <h2>Model Status</h2>
+
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="label">Model Trained</div>
+                    <div class="value {% if status.model_trained %}green{% else %}red{% endif %}">
+                        {% if status.model_trained %}Yes{% else %}No{% endif %}
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Total Allocations</div>
+                    <div class="value blue">{{ status.total_allocations }}</div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Students with Academic Data</div>
+                    <div class="value blue">{{ status.students_with_academic_data }}</div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Model Size</div>
+                    <div class="value">{% if status.model_size_kb %}{{ status.model_size_kb }} KB{% else %}-{% endif %}</div>
+                </div>
+            </div>
+
+            {% if status.model_trained %}
+            <div class="detail-row">
+                <span class="key">Last Trained</span>
+                <span class="val">{{ status.last_trained }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="key">Model Path</span>
+                <span class="val">{{ status.model_path }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>Train Model</h2>
+            <p class="info-text">
+                Train the AI model using historical allocation data. The model learns from past student-course
+                allocations to predict course suitability. You need at least 5 allocation records to train.
+                <br><br>
+                <strong>Note:</strong> Without the AI dependencies installed (<code>uv sync --extra ai</code>),
+                the system uses rule-based heuristics for recommendations. Training requires scikit-learn.
+            </p>
+
+            <form action="{{ url_for('admin_train_ai_model') }}" method="POST">
+                <button type="submit" class="btn btn-primary">Train AI Model</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -56,6 +56,9 @@ Thumbs.db
 instance/
 .webassets-cache
 
+# AI model artifacts
+ai_model/
+
 # Testing
 .pytest_cache/
 .coverage

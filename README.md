@@ -130,9 +130,24 @@ rm course_selection.db && uv run python app.py
 - [x] Teacher dashboard
 - [x] Allocation engine (merit + preference + reservation)
 - [x] Visual allocation reports
-- [ ] AI Recommendation Module
+- [x] AI Recommendation Module
 - [ ] Export to Excel/PDF
 
 ---
+
+## AI Recommendation Module
+
+The system includes an AI module that predicts course suitability for students. See [docs/ai_module.md](docs/ai_module.md) for details.
+
+- Displays "Highly Recommended", "Good Fit", or "Challenging" badges on the student dashboard
+- Uses rule-based heuristics by default, with optional ML model training
+- Considers CGPA, subject marks, interests, department affinity, and course difficulty
+- Admin can enter academic data at `/admin/student/<id>/academic`
+- Model training and status at `/admin/ai-status`
+
+```bash
+# Install AI dependencies (optional, for ML model training)
+uv sync --extra ai
+```
 
 **Tech Stack:** Flask, SQLAlchemy, SQLite, Jinja2

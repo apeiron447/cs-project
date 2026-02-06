@@ -270,6 +270,8 @@
                             <div class="actions">
                                 <a href="{{ url_for('admin_edit_student', student_id=student.id) }}"
                                     class="btn btn-secondary btn-sm">✏️ Edit</a>
+                                <a href="{{ url_for('admin_student_academic', student_id=student.id) }}"
+                                    class="btn btn-secondary btn-sm">📊 Academic</a>
                                 <form action="{{ url_for('admin_delete_student') }}" method="POST"
                                     style="display:inline;">
                                     <input type="hidden" name="student_id" value="{{ student.id }}">

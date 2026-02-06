@@ -188,6 +188,9 @@ class Student(Base):
     batch = relationship("Batch", back_populates="students")
     preferences = relationship("Preference", back_populates="student", order_by="Preference.priority")
     allocations = relationship("Allocation", back_populates="student")
+    academic_history = relationship("StudentAcademicHistory", back_populates="student", order_by="StudentAcademicHistory.semester")
+    subject_marks = relationship("StudentSubjectMark", back_populates="student")
+    interests = relationship("StudentInterest", back_populates="student")
 
     def __repr__(self):
         return f"<Student {self.admission_no}: {self.name}>"
@@ -245,6 +248,10 @@ class Course(Base):
     
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # AI Recommendation fields
+    difficulty_level = Column(Integer, default=5)  # Scale 1-10
+    tags = Column(String(500), nullable=True)  # Comma-separated tags e.g. "programming,algorithms"
 
     # Relationships
     offering_department = relationship("Department", back_populates="courses")
@@ -400,3 +407,70 @@ class Allocation(Base):
 
     def __repr__(self):
         return f"<Allocation Student:{self.student_id} Course:{self.course_id} Status:{self.status.value}>"
+
+
+# ============================================
+# STUDENT ACADEMIC HISTORY (for AI module)
+# ============================================
+
+class StudentAcademicHistory(Base):
+    __tablename__ = "student_academic_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    semester = Column(Integer, nullable=False)
+    cgpa = Column(Float, nullable=True)
+    sgpa = Column(Float, nullable=True)
+    total_marks = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('student_id', 'semester', name='uq_student_semester'),
+    )
+
+    student = relationship("Student", back_populates="academic_history")
+
+    def __repr__(self):
+        return f"<AcademicHistory Student:{self.student_id} Sem:{self.semester} CGPA:{self.cgpa}>"
+
+
+# ============================================
+# STUDENT SUBJECT MARKS (for AI module)
+# ============================================
+
+class StudentSubjectMark(Base):
+    __tablename__ = "student_subject_marks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    subject_name = Column(String(255), nullable=False)
+    marks_obtained = Column(Float, nullable=True)
+    max_marks = Column(Float, default=100)
+    grade = Column(String(5), nullable=True)
+    semester = Column(Integer, nullable=True)
+
+    student = relationship("Student", back_populates="subject_marks")
+
+    def __repr__(self):
+        return f"<SubjectMark Student:{self.student_id} {self.subject_name}: {self.marks_obtained}>"
+
+
+# ============================================
+# STUDENT INTERESTS (for AI module)
+# ============================================
+
+class StudentInterest(Base):
+    __tablename__ = "student_interests"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    interest_tag = Column(String(100), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('student_id', 'interest_tag', name='uq_student_interest'),
+    )
+
+    student = relationship("Student", back_populates="interests")
+
+    def __repr__(self):
+        return f"<StudentInterest Student:{self.student_id} Tag:{self.interest_tag}>"

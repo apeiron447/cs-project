@@ -115,7 +115,8 @@ def init_db():
     """Initialize the database, creating all tables and seeding if needed."""
     from models import (
         User, Department, Programme, Batch, Student, Teacher,
-        Course, SeatMatrix, CoursePool, Preference, Allocation
+        Course, SeatMatrix, CoursePool, Preference, Allocation,
+        StudentAcademicHistory, StudentSubjectMark, StudentInterest
     )
     Base.metadata.create_all(bind=engine)
     print("✓ Database tables created successfully")

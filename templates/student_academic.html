@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Academic Data - {{ student.name }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: #e2e8f0;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .student-info {
+            color: #94a3b8;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4ade80;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-row-4 {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.4);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .alert-info {
+            background: rgba(96, 165, 250, 0.2);
+            border: 1px solid #60a5fa;
+            color: #60a5fa;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #e2e8f0;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 15px;
+            color: #a78bfa;
+            font-size: 0.85rem;
+            margin: 3px 4px 3px 0;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #64748b;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        .inline-form {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .inline-form .form-group {
+            margin-bottom: 0;
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <a href="{{ url_for('admin_students') }}" class="back-link">&larr; Back to Students</a>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <h1>Academic Data</h1>
+        <p class="student-info">{{ student.name }} | {{ student.admission_no }} | {{ student.department.name if student.department else 'N/A' }}</p>
+
+        <!-- Academic History (CGPA/SGPA) -->
+        <div class="card">
+            <h2>Semester-wise Academic History</h2>
+
+            {% if academic_history %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Semester</th>
+                        <th>CGPA</th>
+                        <th>SGPA</th>
+                        <th>Total Marks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in academic_history %}
+                    <tr>
+                        <td>{{ entry.semester }}</td>
+                        <td>{{ entry.cgpa }}</td>
+                        <td>{{ entry.sgpa }}</td>
+                        <td>{{ entry.total_marks }}</td>
+                        <td>
+                            <form action="{{ url_for('admin_student_academic', student_id=student.id) }}" method="POST" style="display:inline">
+                                <input type="hidden" name="action" value="delete_academic">
+                                <input type="hidden" name="history_id" value="{{ entry.id }}">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-state">No academic history recorded yet.</p>
+            {% endif %}
+
+            <form action="{{ url_for('admin_student_academic', student_id=student.id) }}" method="POST">
+                <input type="hidden" name="action" value="add_academic">
+                <div class="form-row-4">
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <input type="number" name="semester" min="1" max="12" required placeholder="e.g. 1">
+                    </div>
+                    <div class="form-group">
+                        <label>CGPA</label>
+                        <input type="number" name="cgpa" step="0.01" min="0" max="10" required placeholder="e.g. 8.5">
+                    </div>
+                    <div class="form-group">
+                        <label>SGPA</label>
+                        <input type="number" name="sgpa" step="0.01" min="0" max="10" required placeholder="e.g. 8.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Marks</label>
+                        <input type="number" name="total_marks" step="0.01" min="0" required placeholder="e.g. 450">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Semester Record</button>
+            </form>
+        </div>
+
+        <!-- Subject Marks -->
+        <div class="card">
+            <h2>Subject Marks</h2>
+
+            {% if subject_marks %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Marks</th>
+                        <th>Max</th>
+                        <th>Grade</th>
+                        <th>Sem</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mark in subject_marks %}
+                    <tr>
+                        <td>{{ mark.subject_name }}</td>
+                        <td>{{ mark.marks_obtained }}</td>
+                        <td>{{ mark.max_marks }}</td>
+                        <td>{{ mark.grade or '-' }}</td>
+                        <td>{{ mark.semester or '-' }}</td>
+                        <td>
+                            <form action="{{ url_for('admin_student_academic', student_id=student.id) }}" method="POST" style="display:inline">
+                                <input type="hidden" name="action" value="delete_subject">
+                                <input type="hidden" name="mark_id" value="{{ mark.id }}">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-state">No subject marks recorded yet.</p>
+            {% endif %}
+
+            <form action="{{ url_for('admin_student_academic', student_id=student.id) }}" method="POST">
+                <input type="hidden" name="action" value="add_subject">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Subject Name</label>
+                        <input type="text" name="subject_name" required placeholder="e.g. Data Structures">
+                    </div>
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <input type="number" name="subject_semester" min="1" max="12" required placeholder="e.g. 3">
+                    </div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Marks Obtained</label>
+                        <input type="number" name="marks_obtained" step="0.01" min="0" required placeholder="e.g. 85">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Marks</label>
+                        <input type="number" name="max_marks" step="0.01" min="1" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Grade (optional)</label>
+                        <input type="text" name="grade" placeholder="e.g. A+">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Subject Mark</button>
+            </form>
+        </div>
+
+        <!-- Interests -->
+        <div class="card">
+            <h2>Interest Tags</h2>
+
+            {% if interests %}
+            <div class="tags-container">
+                {% for interest in interests %}
+                <span class="tag">
+                    {{ interest.interest_tag }}
+                    <form action="{{ url_for('admin_student_academic', student_id=student.id) }}" method="POST" style="display:inline">
+                        <input type="hidden" name="action" value="delete_interest">
+                        <input type="hidden" name="interest_id" value="{{ interest.id }}">
+                        <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.8rem;padding:0 0 0 5px;">&times;</button>
+                    </form>
+                </span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">No interests recorded yet.</p>
+            {% endif %}
+
+            <form action="{{ url_for('admin_student_academic', student_id=student.id) }}" method="POST">
+                <input type="hidden" name="action" value="add_interest">
+                <div class="inline-form">
+                    <div class="form-group">
+                        <label>Interest Tag</label>
+                        <input type="text" name="interest_tag" required placeholder="e.g. programming, data science, literature">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>

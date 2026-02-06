@@ -9,14 +9,16 @@ from .teacher_service import TeacherService
 from .course_service import CourseService
 from .preference_service import PreferenceService
 from .allocation_service import AllocationService
+from .recommendation_service import RecommendationService
 
 __all__ = [
     "DepartmentService",
-    "ProgrammeService", 
+    "ProgrammeService",
     "BatchService",
     "StudentService",
     "TeacherService",
     "CourseService",
     "PreferenceService",
     "AllocationService",
+    "RecommendationService",
 ]
