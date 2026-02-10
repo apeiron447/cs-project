@@ -990,8 +990,9 @@ def student_dashboard(student_id):
     preferences = PreferenceService.get_student_preferences(db_session, student_id)
     selected_course_ids = [p.course_id for p in preferences]
 
-    # Get available courses for student's batch
-    available_courses = CourseService.get_pool_for_batch(db_session, student.batch_id)
+    # Get available courses for student's batch (excluding own department)
+    all_pool_courses = CourseService.get_pool_for_batch(db_session, student.batch_id)
+    available_courses = [c for c in all_pool_courses if c.department_id != student.department_id]
 
     # Get AI recommendations for available courses
     recommendations = {}

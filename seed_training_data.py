@@ -363,14 +363,16 @@ def seed():
         s_tags = set(profile["interests"])
         cgpa = profile["cgpa"]
 
-        # rank courses by affinity (tag overlap + dept match + noise)
+        # only consider courses from other departments (electives)
+        other_dept_courses = [c for c in course_list if c.department_id != s.department_id]
+
+        # rank courses by affinity (tag overlap + noise)
         def affinity(c):
             c_tags = set(t.strip() for t in (c.tags or "").split(",") if t.strip())
             overlap = len(s_tags & c_tags)
-            same_dept = 1 if c.department_id == s.department_id else 0
-            return overlap * 3 + same_dept * 2 + random.random()
+            return overlap * 3 + random.random()
 
-        ranked = sorted(course_list, key=affinity, reverse=True)
+        ranked = sorted(other_dept_courses, key=affinity, reverse=True)
         n_prefs = random.randint(4, 7)
         chosen = ranked[:n_prefs]
 

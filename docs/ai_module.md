@@ -36,23 +36,14 @@ The module uses the following student and course data:
 
 ### Scoring Methods
 
-#### 1. Rule-Based Heuristics (Default)
+#### ML Model (Required)
 
-When no ML model is trained, the system uses a weighted formula:
-
-| Component | Weight | Description |
-|-----------|--------|-------------|
-| Academic Performance | 40% | Based on CGPA, average marks, or qualifying marks |
-| Department Affinity | 20% | Same department = 100, different = 40 |
-| Interest Tag Overlap | 25% | Jaccard similarity between student interests and course tags |
-| Difficulty Match | 15% | How well course difficulty matches student ability level |
-
-#### 2. ML Model (After Training)
-
-A `RandomForestRegressor` trained on historical allocation data. The model uses a 7-feature vector:
+A `RandomForestRegressor` trained on historical allocation data. A trained model is required — recommendations are not shown until the model is trained. The model uses a 6-feature vector:
 - CGPA, average marks, qualifying marks
-- Same department flag, tag overlap ratio
+- Tag overlap ratio
 - Course difficulty level, course credits
+
+**Note:** Students are only recommended electives from other departments. Same-department allocations are excluded from training data.
 
 ## Seed Script (Demo / Training Data)
 

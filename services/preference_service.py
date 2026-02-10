@@ -63,18 +63,22 @@ class PreferenceService:
     
     @staticmethod
     def get_available_courses(db: Session, student_id: int) -> List[Course]:
-        """Get courses available for a student based on their batch."""
+        """Get courses available for a student based on their batch.
+        Excludes courses from the student's own department (electives only)."""
         student = db.query(Student).filter(Student.id == student_id).first()
         if not student:
             return []
-        
-        # Get courses from the student's batch pool
+
+        # Get courses from the student's batch pool, excluding own department
         pool_entries = db.query(CoursePool).filter(
             CoursePool.batch_id == student.batch_id,
             CoursePool.is_active == True
         ).all()
-        
-        return [entry.course for entry in pool_entries if entry.course.is_active]
+
+        return [
+            entry.course for entry in pool_entries
+            if entry.course.is_active and entry.course.department_id != student.department_id
+        ]
     
     @staticmethod
     def clear_preferences(db: Session, student_id: int) -> bool:

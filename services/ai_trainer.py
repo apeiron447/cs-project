@@ -33,11 +33,16 @@ def prepare_training_data(db):
     """
     allocations = (
         db.query(Allocation)
-        .filter(Allocation.status.in_([
-            AllocationStatus.ALLOCATED,
-            AllocationStatus.WAITLISTED,
-            AllocationStatus.NOT_ALLOCATED,
-        ]))
+        .join(Student, Allocation.student_id == Student.id)
+        .join(Course, Allocation.course_id == Course.id)
+        .filter(
+            Allocation.status.in_([
+                AllocationStatus.ALLOCATED,
+                AllocationStatus.WAITLISTED,
+                AllocationStatus.NOT_ALLOCATED,
+            ]),
+            Student.department_id != Course.department_id,
+        )
         .all()
     )
 
@@ -128,8 +133,7 @@ def train_model(db):
     # Feature importances
     feature_names = [
         "cgpa", "avg_marks", "qualifying_marks",
-        "same_department", "tag_overlap",
-        "difficulty_level", "credits",
+        "tag_overlap", "difficulty_level", "credits",
     ]
     importances = dict(zip(feature_names, [round(float(v), 4) for v in model.feature_importances_]))
 

@@ -3,8 +3,7 @@ AI Recommendation Service for course suitability scoring.
 
 Computes a suitability score (0-100) for each course based on
 student academic profile, interests, and course characteristics.
-Uses a trained ML model if available, otherwise falls back to
-rule-based heuristics.
+Requires a trained ML model.
 """
 import os
 
@@ -89,22 +88,18 @@ class RecommendationService:
     def compute_suitability_score(db, student_id, course_id):
         """
         Compute suitability score (0-100) for a student-course pair.
-        Uses ML model if available, otherwise rule-based heuristics.
+        Requires a trained ML model.
         """
         student_features = RecommendationService.get_student_features(db, student_id)
         course_features = RecommendationService.get_course_features(db, course_id)
 
         if not student_features or not course_features:
-            return {"score": 50, "label": "Good Fit"}
+            return None
 
-        # Try ML model first
         score = RecommendationService._try_ml_prediction(student_features, course_features)
-        if score is not None:
-            label = RecommendationService.get_recommendation_label(score)
-            return {"score": round(score, 1), "label": label}
+        if score is None:
+            return None
 
-        # Fallback to rule-based heuristic
-        score = RecommendationService._rule_based_score(student_features, course_features)
         label = RecommendationService.get_recommendation_label(score)
         return {"score": round(score, 1), "label": label}
 
@@ -128,8 +123,6 @@ class RecommendationService:
     @staticmethod
     def _build_feature_vector(student_features, course_features):
         """Build a numeric feature vector for ML model."""
-        same_dept = 1.0 if student_features["department_id"] == course_features["department_id"] else 0.0
-
         # Tag overlap ratio
         s_tags = set(student_features["interest_tags"])
         c_tags = set(course_features["tags"])
@@ -139,79 +132,10 @@ class RecommendationService:
             student_features["cgpa"],
             student_features["avg_marks"],
             student_features["qualifying_marks"],
-            same_dept,
             tag_overlap,
             course_features["difficulty_level"],
             course_features["credits"],
         ]
-
-    @staticmethod
-    def _rule_based_score(student_features, course_features):
-        """
-        Rule-based heuristic scoring (0-100).
-        - Academic performance: 40% weight
-        - Department affinity: 20% weight
-        - Interest tag overlap: 25% weight
-        - Difficulty match: 15% weight
-        """
-        # 1. Academic performance score (40%)
-        cgpa = student_features["cgpa"]
-        avg_marks = student_features["avg_marks"]
-        qualifying = student_features["qualifying_marks"]
-
-        if cgpa > 0:
-            acad_score = (cgpa / 10.0) * 100  # CGPA out of 10
-        elif avg_marks > 0:
-            acad_score = avg_marks  # Already percentage
-        else:
-            acad_score = qualifying  # Qualifying marks as fallback
-
-        acad_score = min(100, max(0, acad_score))
-
-        # 2. Department affinity (20%)
-        same_dept = student_features["department_id"] == course_features["department_id"]
-        dept_score = 100 if same_dept else 40
-
-        # 3. Interest tag overlap (25%)
-        s_tags = set(student_features["interest_tags"])
-        c_tags = set(course_features["tags"])
-        if s_tags and c_tags:
-            overlap = len(s_tags & c_tags)
-            total = len(s_tags | c_tags)
-            tag_score = (overlap / total) * 100
-        elif not s_tags and not c_tags:
-            tag_score = 50  # Neutral when no data
-        else:
-            tag_score = 30  # Low when mismatch in data availability
-
-        # 4. Difficulty match (15%)
-        difficulty = course_features["difficulty_level"]
-        if cgpa > 0:
-            student_level = cgpa  # 1-10 scale
-        elif avg_marks > 0:
-            student_level = avg_marks / 10  # Convert percentage to 1-10
-        else:
-            student_level = qualifying / 10
-
-        diff_gap = abs(student_level - difficulty)
-        if diff_gap <= 1:
-            diff_score = 100  # Well matched
-        elif diff_gap <= 2:
-            diff_score = 75
-        elif diff_gap <= 3:
-            diff_score = 50
-        else:
-            diff_score = max(0, 100 - diff_gap * 15)
-
-        # Weighted combination
-        final_score = (
-            acad_score * 0.40
-            + dept_score * 0.20
-            + tag_score * 0.25
-            + diff_score * 0.15
-        )
-
-        return max(0, min(100, final_score))
 
     @staticmethod
     def get_recommendation_label(score):
@@ -232,5 +156,6 @@ class RecommendationService:
         recommendations = {}
         for course_id in course_ids:
             result = RecommendationService.compute_suitability_score(db, student_id, course_id)
-            recommendations[course_id] = result
+            if result is not None:
+                recommendations[course_id] = result
         return recommendations
