@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Edit Teacher - EMS Portal{% endblock %}
+{% block body_class %}has-sidebar{% endblock %}
+
+{% block sidebar %}{% include "includes/admin_sidebar.html" %}{% endblock %}
+
+{% block topbar_left %}
+<span class="breadcrumb">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="{{ url_for('admin_teachers') }}">Teachers</a>
+    <span class="sep">/</span>
+    <span class="current">Edit</span>
+</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;">
+    <div class="card">
+        <div class="card-header"><h2>Edit Teacher</h2></div>
+
+        <form action="{{ url_for('admin_update_teacher', teacher_id=teacher.id) }}" method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Faculty ID</label>
+                    <input type="text" name="faculty_id" value="{{ teacher.faculty_id }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Designation</label>
+                    <select name="designation" required>
+                        <option value="AP" {% if teacher.designation and teacher.designation.value == 'AP' %}selected{% endif %}>Assistant Professor</option>
+                        <option value="P" {% if teacher.designation and teacher.designation.value == 'P' %}selected{% endif %}>Professor</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" value="{{ teacher.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" value="{{ teacher.email }}" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Contact No</label>
+                    <input type="text" name="contact_no" value="{{ teacher.contact_no or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <select name="department_id" required>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if teacher.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>New Password (leave blank to keep current)</label>
+                <input type="password" name="password" placeholder="Enter new password...">
+                <p class="form-hint">Only fill if you want to change the password</p>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('admin_teachers') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

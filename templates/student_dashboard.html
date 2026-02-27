@@ -1,622 +1,245 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Student Dashboard - EMS Portal{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+{% block topbar_left %}
+<span class="breadcrumb"><span class="current">Student Portal</span></span>
+{% endblock %}
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            min-height: 100vh;
-            color: #fff;
-        }
+{% block topbar_right %}
+<span style="color:var(--text-secondary); font-size:0.88rem;">{{ student.name }}</span>
+<a href="{{ url_for('roles') }}" class="btn btn-ghost btn-sm">Logout</a>
+{% endblock %}
 
-        .navbar {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(10px);
-        }
+{% block content %}
+<div style="max-width:900px;">
+    <div class="welcome-card">
+        <h2>Welcome, {{ student.name }}!</h2>
+        <p>{{ student.programme.name if student.programme else 'N/A' }} | {{ student.batch.start_year }}-{{ student.batch.end_year if student.batch else 'N/A' }} | Marks: {{ student.qualifying_marks }}</p>
+    </div>
 
-        .navbar h1 {
-            font-size: 1.5rem;
-        }
-
-        .navbar .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .navbar a {
-            color: #fff;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 30px;
-        }
-
-        .welcome-card {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-        }
-
-        .welcome-card h2 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-        }
-
-        .welcome-card p {
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .section {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-
-        .section h3 {
-            margin-bottom: 20px;
-            color: #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .allocation-result {
-            text-align: center;
-            padding: 30px;
-        }
-
-        .allocation-result .status {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-        }
-
-        .allocation-result .course-name {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #4ade80;
-            margin-bottom: 10px;
-        }
-
-        .allocation-result .preference-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            background: rgba(74, 222, 128, 0.2);
-            border-radius: 20px;
-            color: #4ade80;
-            font-weight: 600;
-        }
-
-        .allocation-result.waitlisted .course-name {
-            color: #fbbf24;
-        }
-
-        .allocation-result.waitlisted .preference-badge {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-
-        .course-list {
-            display: grid;
-            gap: 12px;
-        }
-
-        .course-item {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: grab;
-            transition: all 0.2s;
-        }
-
-        .course-item:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateX(5px);
-        }
-
-        .course-item.selected {
-            border-color: #4ade80;
-            background: rgba(74, 222, 128, 0.1);
-        }
-
-        .course-item .info h4 {
-            color: #e2e8f0;
-            margin-bottom: 5px;
-        }
-
-        .course-item .info p {
-            color: #94a3b8;
-            font-size: 0.9rem;
-        }
-
-        .recommendation-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-left: 8px;
-            position: relative;
-            cursor: help;
-        }
-
-        .recommendation-badge.highly-recommended {
-            background: rgba(74, 222, 128, 0.2);
-            color: #4ade80;
-            border: 1px solid rgba(74, 222, 128, 0.3);
-        }
-
-        .recommendation-badge.good-fit {
-            background: rgba(96, 165, 250, 0.2);
-            color: #60a5fa;
-            border: 1px solid rgba(96, 165, 250, 0.3);
-        }
-
-        .recommendation-badge.challenging {
-            background: rgba(251, 146, 60, 0.2);
-            color: #fb923c;
-            border: 1px solid rgba(251, 146, 60, 0.3);
-        }
-
-        .recommendation-badge .tooltip {
-            visibility: hidden;
-            background: #1e293b;
-            color: #e2e8f0;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 10px;
-            position: absolute;
-            z-index: 10;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.7rem;
-            white-space: nowrap;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .recommendation-badge:hover .tooltip {
-            visibility: visible;
-        }
-
-        .course-item .priority {
-            width: 35px;
-            height: 35px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #94a3b8;
-        }
-
-        .course-item.selected .priority {
-            background: #4ade80;
-            color: #000;
-        }
-
-        .preference-list {
-            counter-reset: pref-counter;
-        }
-
-        .preference-item {
-            background: rgba(74, 222, 128, 0.1);
-            border: 1px solid #4ade80;
-            border-radius: 10px;
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .preference-item::before {
-            counter-increment: pref-counter;
-            content: counter(pref-counter);
-            width: 30px;
-            height: 30px;
-            background: #4ade80;
-            color: #000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 15px;
-        }
-
-        .preference-item .remove-btn {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #4ade80, #22c55e);
-            color: #000;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #94a3b8;
-        }
-
-        .empty-state .icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-
-        .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .alert-success {
-            background: rgba(74, 222, 128, 0.2);
-            border: 1px solid #4ade80;
-            color: #4ade80;
-        }
-
-        .alert-error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid #ef4444;
-            color: #ef4444;
-        }
-
-        .alert-info {
-            background: rgba(96, 165, 250, 0.2);
-            border: 1px solid #60a5fa;
-            color: #60a5fa;
-        }
-
-        .form-actions {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        #selected-courses {
-            min-height: 100px;
-        }
-
-        .btn-info-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 1px solid rgba(96, 165, 250, 0.5);
-            background: rgba(96, 165, 250, 0.15);
-            color: #60a5fa;
-            font-weight: bold;
-            font-style: italic;
-            font-family: Georgia, serif;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-        }
-
-        .btn-info-icon:hover {
-            background: rgba(96, 165, 250, 0.3);
-        }
-    </style>
-</head>
-
-<body>
-
-    <nav class="navbar">
-        <h1>📚 Student Portal</h1>
-        <div class="user-info">
-            <span>{{ student.name }}</span>
-            <a href="{{ url_for('roles') }}">Logout</a>
-        </div>
-    </nav>
-
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-
-        <div class="welcome-card">
-            <h2>Welcome, {{ student.name }}! 👋</h2>
-            <p>{{ student.programme.name if student.programme else 'N/A' }} | {{ student.batch.start_year }}-{{
-                student.batch.end_year if student.batch else 'N/A' }} | Marks: {{ student.qualifying_marks }}</p>
-        </div>
-
-        <!-- Allocation Result (if exists) -->
-        {% if allocation %}
-        <div class="section">
-            <h3>🎯 Your Allocation Result</h3>
-            <div class="allocation-result {{ 'waitlisted' if allocation.status.value == 'Waitlisted' else '' }}">
-                <p class="status">
-                    {% if allocation.status.value == 'Allocated' %}
-                    ✅ You have been allocated to:
-                    {% else %}
-                    ⏳ You are on the waitlist for:
-                    {% endif %}
-                </p>
-                <p class="course-name">{{ allocation.course.name if allocation.course else 'N/A' }}</p>
-                <p style="color: #94a3b8; margin-bottom: 15px;">{{ allocation.course.code if allocation.course else ''
-                    }}</p>
-                <span class="preference-badge">Preference #{{ allocation.preference_number }}</span>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Preference Submission -->
-        <div class="section">
-            <h3>📝 Submit Course Preferences</h3>
-
-            {% if student.batch and student.batch.preferences_locked %}
-            <div class="alert alert-error">
-                Preferences are locked by the admin. You cannot modify your selections at this time.
-            </div>
-            {% endif %}
-
-            {% if preferences %}
-            <div class="alert alert-info">
-                You have already submitted preferences.{% if not (student.batch and student.batch.preferences_locked) %} You can modify them below until the deadline.{% endif %}
-            </div>
-            {% endif %}
-
-            <form action="{{ url_for('student_submit_preferences') }}" method="POST" id="preference-form">
-                <input type="hidden" name="student_id" value="{{ student.id }}">
-                <input type="hidden" name="course_ids" id="course-ids-input" value="">
-
-                <p style="color: #94a3b8; margin-bottom: 15px;">Click on courses below to add them to your preferences
-                    (in order of priority):</p>
-
-                <h4 style="color: #e2e8f0; margin: 20px 0 10px;">Selected Preferences:</h4>
-                <div id="selected-courses" class="preference-list">
-                    {% if preferences %}
-                    {% for pref in preferences %}
-                    <div class="preference-item" data-course-id="{{ pref.course_id }}">
-                        <div style="display: flex; align-items: center;">
-                            <span style="margin-left: 10px;">{{ pref.course.code }} - {{ pref.course.name }}</span>
-                        </div>
-                        <button type="button" class="remove-btn" onclick="removeCourse({{ pref.course_id }})">✕
-                            Remove</button>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="empty-state" id="empty-preferences">
-                        <p>No courses selected yet. Click on courses below to add preferences.</p>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <h4 style="color: #e2e8f0; margin: 30px 0 10px;">Available Courses:</h4>
-                {% if available_courses %}
-                <div class="course-list" id="available-courses">
-                    {% for course in available_courses %}
-                    {% set rec = recommendations.get(course.id, {}) %}
-                    {% set rec_label = rec.get('label', '') %}
-                    {% set rec_score = rec.get('score', 0) %}
-                    <div class="course-item {% if course.id in selected_course_ids %}selected{% endif %}"
-                        data-course-id="{{ course.id }}"
-                        data-course-code="{{ course.code }}"
-                        data-course-name="{{ course.name }}"
-                        data-course-desc="{{ course.description or 'No description available.' }}"
-                        data-course-teacher="{{ course.teacher.name if course.teacher else 'TBA' }}"
-                        data-course-credits="{{ course.credits }}"
-                        data-course-difficulty="{{ course.difficulty_level or 'N/A' }}"
-                        data-course-dept="{{ course.offering_department.name if course.offering_department else 'N/A' }}"
-                        data-course-tags="{{ course.tags or '' }}"
-                        data-course-capacity="{{ course.max_capacity }}"
-                        onclick="toggleCourse({{ course.id }}, '{{ course.code }}', '{{ course.name }}')">
-                        <div class="info">
-                            <h4>{{ course.code }} - {{ course.name }}
-                                {% if rec_label %}
-                                <span class="recommendation-badge {% if rec_label == 'Highly Recommended' %}highly-recommended{% elif rec_label == 'Good Fit' %}good-fit{% else %}challenging{% endif %}">
-                                    {{ rec_label }}
-                                    <span class="tooltip">Score: {{ rec_score }}/100</span>
-                                </span>
-                                {% endif %}
-                            </h4>
-                            <p>{{ course.offering_department.name if course.offering_department else 'N/A' }} | {{
-                                course.max_capacity }} seats{% if course.difficulty_level %} | Difficulty: {{ course.difficulty_level }}/10{% endif %}</p>
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <button type="button" class="btn-info-icon" onclick="event.stopPropagation(); showCourseDetail(this.closest('.course-item'))" title="View details">i</button>
-                            <div class="priority">+</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+    {% if allocation %}
+    <div class="card">
+        <div class="card-header"><h2>Your Allocation Result</h2></div>
+        <div class="allocation-result {{ 'waitlisted' if allocation.status.value == 'Waitlisted' else '' }}">
+            <p class="status">
+                {% if allocation.status.value == 'Allocated' %}
+                You have been allocated to:
                 {% else %}
-                <div class="empty-state">
-                    <div class="icon">📭</div>
-                    <p>No courses available for your batch yet.</p>
+                You are on the waitlist for:
+                {% endif %}
+            </p>
+            <p class="course-name">{{ allocation.course.name if allocation.course else 'N/A' }}</p>
+            <p style="color:var(--text-muted); margin-bottom:14px;">{{ allocation.course.code if allocation.course else '' }}</p>
+            <span class="preference-badge">Preference #{{ allocation.preference_number }}</span>
+            <div style="margin-top:18px;">
+                <a href="{{ url_for('student_allocation_details', student_id=student.id) }}" class="btn btn-primary btn-sm">View Allocation Details</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header"><h2>Submit Course Preferences</h2></div>
+
+        {% if student.batch and student.batch.preferences_locked %}
+        <div class="alert alert-error">Preferences are locked by the admin. You cannot modify your selections at this time.</div>
+        {% endif %}
+
+        {% if preferences %}
+        <div class="alert alert-info">
+            You have already submitted preferences.{% if not (student.batch and student.batch.preferences_locked) %} You can modify them below until the deadline.{% endif %}
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('student_submit_preferences') }}" method="POST" id="preference-form">
+            <input type="hidden" name="student_id" value="{{ student.id }}">
+            <input type="hidden" name="course_ids" id="course-ids-input" value="">
+
+            <p style="color:var(--text-secondary); margin-bottom:14px; font-size:0.9rem;">Click on courses below to add them to your preferences (in order of priority):</p>
+
+            <h4 style="margin:20px 0 10px; font-size:0.95rem;">Selected Preferences:</h4>
+            <div id="selected-courses" class="preference-list">
+                {% if preferences %}
+                {% for pref in preferences %}
+                <div class="preference-item" data-course-id="{{ pref.course_id }}">
+                    <div style="display:flex; align-items:center;">
+                        <span style="margin-left:10px;">{{ pref.course.code }} - {{ pref.course.name }}</span>
+                    </div>
+                    <button type="button" class="remove-btn" onclick="removeCourse({{ pref.course_id }})">Remove</button>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state" id="empty-preferences">
+                    <p>No courses selected yet. Click on courses below to add preferences.</p>
                 </div>
                 {% endif %}
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary" {% if student.batch and student.batch.preferences_locked %}disabled title="Preferences are locked"{% endif %}>💾 Save Preferences</button>
-                    <button type="button" class="btn btn-secondary" onclick="clearAll()" {% if student.batch and student.batch.preferences_locked %}disabled{% endif %}>Clear All</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Course Detail Modal -->
-    <div id="course-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:#1e293b; border-radius:15px; padding:30px; max-width:500px; width:90%; border:1px solid rgba(255,255,255,0.15); position:relative;">
-            <button onclick="closeCourseModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
-            <h3 id="modal-title" style="color:#60a5fa; margin-bottom:20px;"></h3>
-            <div style="display:grid; gap:12px;">
-                <div><span style="color:#94a3b8;">Description:</span><p id="modal-desc" style="margin-top:4px;color:#e2e8f0;"></p></div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div><span style="color:#94a3b8;">Teacher:</span><p id="modal-teacher" style="color:#e2e8f0;"></p></div>
-                    <div><span style="color:#94a3b8;">Credits:</span><p id="modal-credits" style="color:#e2e8f0;"></p></div>
-                    <div><span style="color:#94a3b8;">Difficulty:</span><p id="modal-difficulty" style="color:#e2e8f0;"></p></div>
-                    <div><span style="color:#94a3b8;">Capacity:</span><p id="modal-capacity" style="color:#e2e8f0;"></p></div>
-                    <div><span style="color:#94a3b8;">Department:</span><p id="modal-dept" style="color:#e2e8f0;"></p></div>
-                </div>
-                <div><span style="color:#94a3b8;">Tags:</span><p id="modal-tags" style="color:#e2e8f0;"></p></div>
             </div>
+
+            <h4 style="margin:28px 0 10px; font-size:0.95rem;">Available Courses:</h4>
+            {% if available_courses %}
+            <div class="course-list" id="available-courses">
+                {% for course in available_courses %}
+                {% set rec = recommendations.get(course.id, {}) %}
+                {% set rec_label = rec.get('label', '') %}
+                {% set rec_score = rec.get('score', 0) %}
+                <div class="course-item {% if course.id in selected_course_ids %}selected{% endif %}"
+                    data-course-id="{{ course.id }}"
+                    data-course-code="{{ course.code }}"
+                    data-course-name="{{ course.name }}"
+                    data-course-desc="{{ course.description or 'No description available.' }}"
+                    data-course-teacher="{{ course.teacher.name if course.teacher else 'TBA' }}"
+                    data-course-credits="{{ course.credits }}"
+                    data-course-difficulty="{{ course.difficulty_level or 'N/A' }}"
+                    data-course-dept="{{ course.offering_department.name if course.offering_department else 'N/A' }}"
+                    data-course-tags="{{ course.tags or '' }}"
+                    data-course-capacity="{{ course.max_capacity }}"
+                    onclick="toggleCourse({{ course.id }}, '{{ course.code }}', '{{ course.name }}')">
+                    <div class="info">
+                        <h4>{{ course.code }} - {{ course.name }}
+                            {% if rec_label %}
+                            <span class="recommendation-badge {% if rec_label == 'Highly Recommended' %}highly-recommended{% elif rec_label == 'Good Fit' %}good-fit{% else %}challenging{% endif %}">
+                                {{ rec_label }}
+                                <span class="tooltip">Score: {{ rec_score }}/100</span>
+                            </span>
+                            {% endif %}
+                        </h4>
+                        <p>{{ course.offering_department.name if course.offering_department else 'N/A' }} | {{ course.max_capacity }} seats{% if course.difficulty_level %} | Difficulty: {{ course.difficulty_level }}/10{% endif %}</p>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <button type="button" class="btn-info-icon" onclick="event.stopPropagation(); showCourseDetail(this.closest('.course-item'))" title="View details">i</button>
+                        <div class="priority">+</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No courses available for your batch yet.</p>
+            </div>
+            {% endif %}
+
+            <div class="form-actions" style="justify-content:center;">
+                <button type="submit" class="btn btn-primary" {% if student.batch and student.batch.preferences_locked %}disabled title="Preferences are locked"{% endif %}>Save Preferences</button>
+                <button type="button" class="btn btn-secondary" onclick="clearAll()" {% if student.batch and student.batch.preferences_locked %}disabled{% endif %}>Clear All</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Course Detail Modal -->
+<div id="course-modal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeCourseModal()">&times;</button>
+        <h3 id="modal-title" style="color:var(--accent); margin-bottom:18px;"></h3>
+        <div style="display:grid; gap:12px;">
+            <div><span style="color:var(--text-muted); font-size:0.82rem;">Description:</span><p id="modal-desc" style="margin-top:4px;"></p></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div><span style="color:var(--text-muted); font-size:0.82rem;">Teacher:</span><p id="modal-teacher"></p></div>
+                <div><span style="color:var(--text-muted); font-size:0.82rem;">Credits:</span><p id="modal-credits"></p></div>
+                <div><span style="color:var(--text-muted); font-size:0.82rem;">Difficulty:</span><p id="modal-difficulty"></p></div>
+                <div><span style="color:var(--text-muted); font-size:0.82rem;">Capacity:</span><p id="modal-capacity"></p></div>
+                <div><span style="color:var(--text-muted); font-size:0.82rem;">Department:</span><p id="modal-dept"></p></div>
+            </div>
+            <div><span style="color:var(--text-muted); font-size:0.82rem;">Tags:</span><p id="modal-tags"></p></div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        let selectedCourses = [
-            {% for pref in preferences %}
-        { id: { { pref.course_id } }, code: '{{ pref.course.code }}', name: '{{ pref.course.name }}' },
+{% block extra_js %}
+<script>
+    let selectedCourses = [
+        {% for pref in preferences %}
+        { id: {{ pref.course_id }}, code: '{{ pref.course.code }}', name: '{{ pref.course.name }}' },
         {% endfor %}
     ];
 
-        function updateHiddenInput() {
-            document.getElementById('course-ids-input').value = selectedCourses.map(c => c.id).join(',');
-        }
+    function updateHiddenInput() {
+        document.getElementById('course-ids-input').value = selectedCourses.map(c => c.id).join(',');
+    }
 
-        function renderSelectedCourses() {
-            const container = document.getElementById('selected-courses');
-            if (selectedCourses.length === 0) {
-                container.innerHTML = '<div class="empty-state" id="empty-preferences"><p>No courses selected yet. Click on courses below to add preferences.</p></div>';
-            } else {
-                container.innerHTML = selectedCourses.map((course, index) => `
+    function renderSelectedCourses() {
+        const container = document.getElementById('selected-courses');
+        if (selectedCourses.length === 0) {
+            container.innerHTML = '<div class="empty-state" id="empty-preferences"><p>No courses selected yet. Click on courses below to add preferences.</p></div>';
+        } else {
+            container.innerHTML = selectedCourses.map((course, index) => `
                 <div class="preference-item" data-course-id="${course.id}">
-                    <div style="display: flex; align-items: center;">
-                        <span style="margin-left: 10px;">${course.code} - ${course.name}</span>
+                    <div style="display:flex; align-items:center;">
+                        <span style="margin-left:10px;">${course.code} - ${course.name}</span>
                     </div>
-                    <button type="button" class="remove-btn" onclick="removeCourse(${course.id})">✕ Remove</button>
+                    <button type="button" class="remove-btn" onclick="removeCourse(${course.id})">Remove</button>
                 </div>
             `).join('');
-            }
-            updateHiddenInput();
-            updateCourseStyles();
         }
-
-        function updateCourseStyles() {
-            document.querySelectorAll('.course-item').forEach(item => {
-                const courseId = parseInt(item.dataset.courseId);
-                if (selectedCourses.some(c => c.id === courseId)) {
-                    item.classList.add('selected');
-                    item.querySelector('.priority').textContent = '✓';
-                } else {
-                    item.classList.remove('selected');
-                    item.querySelector('.priority').textContent = '+';
-                }
-            });
-        }
-
-        function toggleCourse(id, code, name) {
-            const index = selectedCourses.findIndex(c => c.id === id);
-            if (index > -1) {
-                selectedCourses.splice(index, 1);
-            } else {
-                selectedCourses.push({ id, code, name });
-            }
-            renderSelectedCourses();
-        }
-
-        function removeCourse(id) {
-            selectedCourses = selectedCourses.filter(c => c.id !== id);
-            renderSelectedCourses();
-        }
-
-        function clearAll() {
-            selectedCourses = [];
-            renderSelectedCourses();
-        }
-
-        // Course detail modal
-        function showCourseDetail(el) {
-            document.getElementById('modal-title').textContent = el.dataset.courseCode + ' - ' + el.dataset.courseName;
-            document.getElementById('modal-desc').textContent = el.dataset.courseDesc;
-            document.getElementById('modal-teacher').textContent = el.dataset.courseTeacher;
-            document.getElementById('modal-credits').textContent = el.dataset.courseCredits;
-            document.getElementById('modal-difficulty').textContent = el.dataset.courseDifficulty + '/10';
-            document.getElementById('modal-capacity').textContent = el.dataset.courseCapacity + ' seats';
-            document.getElementById('modal-dept').textContent = el.dataset.courseDept;
-            document.getElementById('modal-tags').textContent = el.dataset.courseTags || 'None';
-            var modal = document.getElementById('course-modal');
-            modal.style.display = 'flex';
-        }
-
-        function closeCourseModal() {
-            document.getElementById('course-modal').style.display = 'none';
-        }
-
-        document.getElementById('course-modal').addEventListener('click', function(e) {
-            if (e.target === this) closeCourseModal();
-        });
-
-        {% if student.batch and student.batch.preferences_locked %}
-        // Disable course toggling when locked
-        document.querySelectorAll('.course-item').forEach(function(el) {
-            el.style.cursor = 'default';
-            el.onclick = function(e) {
-                // Only allow info button clicks
-                if (e.target.closest('.btn-info-icon')) {
-                    showCourseDetail(el);
-                }
-            };
-        });
-        document.querySelectorAll('.remove-btn').forEach(function(btn) { btn.disabled = true; });
-        {% endif %}
-
-        // Initialize
         updateHiddenInput();
         updateCourseStyles();
-    </script>
+    }
 
-</body>
+    function updateCourseStyles() {
+        document.querySelectorAll('.course-item').forEach(item => {
+            const courseId = parseInt(item.dataset.courseId);
+            if (selectedCourses.some(c => c.id === courseId)) {
+                item.classList.add('selected');
+                item.querySelector('.priority').textContent = '\u2713';
+            } else {
+                item.classList.remove('selected');
+                item.querySelector('.priority').textContent = '+';
+            }
+        });
+    }
 
-</html>
+    function toggleCourse(id, code, name) {
+        const index = selectedCourses.findIndex(c => c.id === id);
+        if (index > -1) {
+            selectedCourses.splice(index, 1);
+        } else {
+            selectedCourses.push({ id, code, name });
+        }
+        renderSelectedCourses();
+    }
+
+    function removeCourse(id) {
+        selectedCourses = selectedCourses.filter(c => c.id !== id);
+        renderSelectedCourses();
+    }
+
+    function clearAll() {
+        selectedCourses = [];
+        renderSelectedCourses();
+    }
+
+    function showCourseDetail(el) {
+        document.getElementById('modal-title').textContent = el.dataset.courseCode + ' - ' + el.dataset.courseName;
+        document.getElementById('modal-desc').textContent = el.dataset.courseDesc;
+        document.getElementById('modal-teacher').textContent = el.dataset.courseTeacher;
+        document.getElementById('modal-credits').textContent = el.dataset.courseCredits;
+        document.getElementById('modal-difficulty').textContent = el.dataset.courseDifficulty + '/10';
+        document.getElementById('modal-capacity').textContent = el.dataset.courseCapacity + ' seats';
+        document.getElementById('modal-dept').textContent = el.dataset.courseDept;
+        document.getElementById('modal-tags').textContent = el.dataset.courseTags || 'None';
+        document.getElementById('course-modal').classList.add('show');
+    }
+
+    function closeCourseModal() {
+        document.getElementById('course-modal').classList.remove('show');
+    }
+
+    document.getElementById('course-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeCourseModal();
+    });
+
+    {% if student.batch and student.batch.preferences_locked %}
+    document.querySelectorAll('.course-item').forEach(function(el) {
+        el.style.cursor = 'default';
+        el.onclick = function(e) {
+            if (e.target.closest('.btn-info-icon')) showCourseDetail(el);
+        };
+    });
+    document.querySelectorAll('.remove-btn').forEach(function(btn) { btn.disabled = true; });
+    {% endif %}
+
+    updateHiddenInput();
+    updateCourseStyles();
+</script>
+{% endblock %}

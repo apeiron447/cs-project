@@ -5,7 +5,7 @@ Implements merit + preference + reservation based allocation.
 from sqlalchemy.orm import Session
 from models import (
     Student, Course, Preference, Allocation, SeatMatrix,
-    AllocationStatus, ReservationCategory, CoursePool
+    AllocationStatus, ReservationCategory, CoursePool, Batch
 )
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
@@ -399,3 +399,386 @@ class AllocationService:
                 report["by_category"][category]["waitlisted"] += 1
         
         return report
+
+    # ============================================
+    # TRANSPARENCY METHODS
+    # ============================================
+
+    @staticmethod
+    def generate_transparency_data(
+        db: Session,
+        batch_id: int,
+        allocation_round: int = 1
+    ) -> Dict:
+        """
+        Generate full transparency data for a batch allocation.
+        Returns merit list with ranks, course cutoffs, and summary stats.
+        """
+        # Get all students in batch sorted by merit
+        students = db.query(Student).filter(
+            Student.batch_id == batch_id
+        ).order_by(Student.qualifying_marks.desc()).all()
+
+        if not students:
+            return {"merit_list": [], "course_cutoffs": [], "summary": {}}
+
+        # Build merit list with tied ranks
+        merit_list = []
+        current_rank = 1
+        for i, student in enumerate(students):
+            # Tied rank: if marks equal to previous student, share rank
+            if i > 0 and student.qualifying_marks == students[i - 1].qualifying_marks:
+                rank = merit_list[i - 1]["merit_rank"]
+            else:
+                rank = i + 1
+
+            # Get preferences
+            prefs = db.query(Preference).filter(
+                Preference.student_id == student.id
+            ).order_by(Preference.priority).all()
+
+            pref_list = []
+            for p in prefs:
+                course = db.query(Course).filter(Course.id == p.course_id).first()
+                pref_list.append({
+                    "priority": p.priority,
+                    "course_code": course.code if course else "N/A",
+                    "course_name": course.name if course else "N/A",
+                })
+
+            # Get allocation
+            allocation = db.query(Allocation).filter(
+                Allocation.student_id == student.id,
+                Allocation.allocation_round == allocation_round
+            ).first()
+
+            if allocation:
+                alloc_course = db.query(Course).filter(Course.id == allocation.course_id).first()
+                alloc_status = allocation.status.value
+                alloc_course_code = alloc_course.code if alloc_course else "N/A"
+                alloc_course_name = alloc_course.name if alloc_course else "N/A"
+                alloc_pref_num = allocation.preference_number
+            elif not prefs:
+                alloc_status = "No Preference"
+                alloc_course_code = "-"
+                alloc_course_name = "-"
+                alloc_pref_num = None
+            else:
+                alloc_status = "Not Allocated"
+                alloc_course_code = "-"
+                alloc_course_name = "-"
+                alloc_pref_num = None
+
+            merit_list.append({
+                "merit_rank": rank,
+                "admission_no": student.admission_no,
+                "name": student.name,
+                "qualifying_marks": student.qualifying_marks,
+                "reservation_category": student.reservation_category.value,
+                "preferences": pref_list,
+                "allocation_status": alloc_status,
+                "allocated_course_code": alloc_course_code,
+                "allocated_course_name": alloc_course_name,
+                "preference_number": alloc_pref_num,
+            })
+
+        # Build course cutoffs
+        pool_entries = db.query(CoursePool).filter(
+            CoursePool.batch_id == batch_id,
+            CoursePool.is_active == True
+        ).all()
+
+        categories = ["General", "EWS", "OBC", "SC", "ST"]
+        course_cutoffs = []
+
+        for entry in pool_entries:
+            course = db.query(Course).filter(Course.id == entry.course_id).first()
+            if not course:
+                continue
+
+            seat_matrix = db.query(SeatMatrix).filter(
+                SeatMatrix.course_id == course.id
+            ).first()
+
+            # Get allocated students for this course
+            allocs = db.query(Allocation).filter(
+                Allocation.course_id == course.id,
+                Allocation.allocation_round == allocation_round,
+                Allocation.status == AllocationStatus.ALLOCATED
+            ).all()
+
+            allocated_students = []
+            # Group by category for cutoff calculation
+            cat_marks = {c: [] for c in categories}
+            pref_dist = {1: 0, 2: 0, 3: 0, "4+": 0}
+
+            for a in allocs:
+                s = db.query(Student).filter(Student.id == a.student_id).first()
+                if not s:
+                    continue
+                # Find merit rank
+                s_rank = next(
+                    (m["merit_rank"] for m in merit_list if m["admission_no"] == s.admission_no),
+                    None
+                )
+                allocated_students.append({
+                    "merit_rank": s_rank,
+                    "admission_no": s.admission_no,
+                    "name": s.name,
+                    "marks": s.qualifying_marks,
+                    "category": s.reservation_category.value,
+                    "pref_number": a.preference_number,
+                })
+                cat_marks[s.reservation_category.value].append(s.qualifying_marks)
+
+                if a.preference_number and a.preference_number <= 3:
+                    pref_dist[a.preference_number] += 1
+                elif a.preference_number:
+                    pref_dist["4+"] += 1
+
+            # Calculate cutoffs per category
+            cat_cutoffs = {}
+            for cat in categories:
+                total = getattr(seat_matrix, f"{cat.lower()}_seats", 0) if seat_matrix else 0
+                filled = len(cat_marks[cat])
+                if cat_marks[cat]:
+                    cutoff = min(cat_marks[cat])
+                else:
+                    cutoff = "Open"
+                cat_cutoffs[cat] = {
+                    "seats_total": total,
+                    "seats_filled": filled,
+                    "cutoff_marks": cutoff,
+                }
+
+            total_seats = sum(c["seats_total"] for c in cat_cutoffs.values())
+            filled_seats = sum(c["seats_filled"] for c in cat_cutoffs.values())
+
+            course_cutoffs.append({
+                "course_code": course.code,
+                "course_name": course.name,
+                "total_seats": total_seats,
+                "filled_seats": filled_seats,
+                "category_cutoffs": cat_cutoffs,
+                "allocated_students": sorted(allocated_students, key=lambda x: x["merit_rank"] or 999),
+                "preference_distribution": pref_dist,
+            })
+
+        # Summary stats
+        allocated_count = sum(1 for m in merit_list if m["allocation_status"] == "Allocated")
+        waitlisted_count = sum(1 for m in merit_list if m["allocation_status"] == "Waitlisted")
+        no_pref_count = sum(1 for m in merit_list if m["allocation_status"] == "No Preference")
+        total = len(merit_list)
+
+        pref_nums = [m["preference_number"] for m in merit_list if m["preference_number"] is not None]
+        first_pref_count = sum(1 for p in pref_nums if p == 1)
+        first_pref_rate = round(first_pref_count / allocated_count * 100, 1) if allocated_count > 0 else 0
+        avg_pref = round(sum(pref_nums) / len(pref_nums), 2) if pref_nums else 0
+
+        summary = {
+            "total_students": total,
+            "allocated": allocated_count,
+            "waitlisted": waitlisted_count,
+            "no_preference": no_pref_count,
+            "first_pref_rate": first_pref_rate,
+            "avg_pref_fulfilled": avg_pref,
+        }
+
+        return {
+            "merit_list": merit_list,
+            "course_cutoffs": course_cutoffs,
+            "summary": summary,
+        }
+
+    @staticmethod
+    def get_student_transparency_data(
+        db: Session,
+        student_id: int,
+        allocation_round: int = 1
+    ) -> Optional[Dict]:
+        """
+        Get transparency data for a specific student.
+        Returns merit rank, preference journey, and anonymized cutoff table.
+        """
+        student = db.query(Student).filter(Student.id == student_id).first()
+        if not student or not student.batch_id:
+            return None
+
+        batch_id = student.batch_id
+
+        # Calculate merit rank
+        students_in_batch = db.query(Student).filter(
+            Student.batch_id == batch_id
+        ).order_by(Student.qualifying_marks.desc()).all()
+
+        total_students = len(students_in_batch)
+        merit_rank = None
+        for i, s in enumerate(students_in_batch):
+            if i > 0 and s.qualifying_marks == students_in_batch[i - 1].qualifying_marks:
+                if s.id == student_id:
+                    # Find rank of previous student with same marks
+                    for j in range(i - 1, -1, -1):
+                        if students_in_batch[j].qualifying_marks != s.qualifying_marks or j == 0:
+                            merit_rank = j + 1 if students_in_batch[j].qualifying_marks == s.qualifying_marks else j + 2
+                            break
+                    break
+            else:
+                if s.id == student_id:
+                    merit_rank = i + 1
+                    break
+
+        if merit_rank is None:
+            merit_rank = total_students  # fallback
+
+        # Get student's allocation
+        allocation = db.query(Allocation).filter(
+            Allocation.student_id == student_id,
+            Allocation.allocation_round == allocation_round
+        ).first()
+
+        # Build preference journey
+        preferences = db.query(Preference).filter(
+            Preference.student_id == student_id
+        ).order_by(Preference.priority).all()
+
+        categories = ["General", "EWS", "OBC", "SC", "ST"]
+        student_category = student.reservation_category.value
+
+        journey = []
+        allocated_found = False
+        for pref in preferences:
+            course = db.query(Course).filter(Course.id == pref.course_id).first()
+            if not course:
+                continue
+
+            # Get all allocated students for this course to compute cutoff
+            allocs = db.query(Allocation).filter(
+                Allocation.course_id == course.id,
+                Allocation.allocation_round == allocation_round,
+                Allocation.status == AllocationStatus.ALLOCATED
+            ).all()
+
+            # Compute cutoff for student's category
+            cat_marks = []
+            for a in allocs:
+                alloc_student = db.query(Student).filter(Student.id == a.student_id).first()
+                if alloc_student and alloc_student.reservation_category.value == student_category:
+                    cat_marks.append(alloc_student.qualifying_marks)
+
+            cutoff = min(cat_marks) if cat_marks else None
+
+            # Check seat availability
+            seat_matrix = db.query(SeatMatrix).filter(
+                SeatMatrix.course_id == course.id
+            ).first()
+
+            total_cat_seats = 0
+            filled_cat_seats = len(cat_marks)
+            if seat_matrix:
+                total_cat_seats = getattr(seat_matrix, f"{student_category.lower()}_seats", 0)
+
+            seats_available = total_cat_seats > filled_cat_seats
+
+            # Determine outcome
+            if allocation and allocation.course_id == course.id and allocation.status == AllocationStatus.ALLOCATED:
+                outcome = "ALLOCATED"
+                allocated_found = True
+            elif allocated_found:
+                outcome = "NOT_REACHED"
+            elif not seats_available and cutoff is not None and student.qualifying_marks < cutoff:
+                outcome = "SEATS_FULL"
+            elif total_cat_seats == 0:
+                # Check general seats as fallback
+                gen_marks = []
+                for a in allocs:
+                    alloc_student = db.query(Student).filter(Student.id == a.student_id).first()
+                    if alloc_student and alloc_student.reservation_category.value == "General":
+                        gen_marks.append(alloc_student.qualifying_marks)
+                gen_total = seat_matrix.general_seats if seat_matrix else 0
+                if gen_total <= len(gen_marks):
+                    outcome = "SEATS_FULL"
+                else:
+                    outcome = "SEATS_FULL"
+            else:
+                outcome = "SEATS_FULL"
+
+            journey.append({
+                "priority": pref.priority,
+                "course_code": course.code,
+                "course_name": course.name,
+                "cutoff_marks": cutoff if cutoff is not None else "N/A",
+                "student_marks": student.qualifying_marks,
+                "seats_total": total_cat_seats,
+                "seats_filled": filled_cat_seats,
+                "outcome": outcome,
+            })
+
+        # Build anonymized course cutoff table
+        pool_entries = db.query(CoursePool).filter(
+            CoursePool.batch_id == batch_id,
+            CoursePool.is_active == True
+        ).all()
+
+        cutoff_table = []
+        for entry in pool_entries:
+            course = db.query(Course).filter(Course.id == entry.course_id).first()
+            if not course:
+                continue
+
+            seat_matrix = db.query(SeatMatrix).filter(
+                SeatMatrix.course_id == course.id
+            ).first()
+
+            allocs = db.query(Allocation).filter(
+                Allocation.course_id == course.id,
+                Allocation.allocation_round == allocation_round,
+                Allocation.status == AllocationStatus.ALLOCATED
+            ).all()
+
+            cat_data = {}
+            for cat in categories:
+                cat_marks_list = []
+                for a in allocs:
+                    alloc_student = db.query(Student).filter(Student.id == a.student_id).first()
+                    if alloc_student and alloc_student.reservation_category.value == cat:
+                        cat_marks_list.append(alloc_student.qualifying_marks)
+
+                total_seats = getattr(seat_matrix, f"{cat.lower()}_seats", 0) if seat_matrix else 0
+                filled = len(cat_marks_list)
+                cutoff_val = min(cat_marks_list) if cat_marks_list else "Open"
+
+                cat_data[cat] = {
+                    "cutoff": cutoff_val,
+                    "total": total_seats,
+                    "filled": filled,
+                }
+
+            total_seats = sum(cat_data[c]["total"] for c in categories)
+            filled_seats = sum(cat_data[c]["filled"] for c in categories)
+
+            cutoff_table.append({
+                "course_code": course.code,
+                "course_name": course.name,
+                "total_seats": total_seats,
+                "filled_seats": filled_seats,
+                "categories": cat_data,
+            })
+
+        return {
+            "student": {
+                "name": student.name,
+                "admission_no": student.admission_no,
+                "qualifying_marks": student.qualifying_marks,
+                "reservation_category": student_category,
+                "merit_rank": merit_rank,
+                "total_students": total_students,
+            },
+            "allocation": {
+                "course_code": allocation.course.code if allocation and allocation.course else None,
+                "course_name": allocation.course.name if allocation and allocation.course else None,
+                "status": allocation.status.value if allocation else "No Allocation",
+                "preference_number": allocation.preference_number if allocation else None,
+            },
+            "journey": journey,
+            "cutoff_table": cutoff_table,
+        }

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Allocation Details - EMS Portal{% endblock %}
+
+{% block topbar_left %}
+<span class="breadcrumb"><span class="current">Allocation Details</span></span>
+{% endblock %}
+
+{% block topbar_right %}
+<span style="color:var(--text-secondary); font-size:0.88rem;">{{ student.name }}</span>
+<a href="{{ url_for('student_dashboard', student_id=student.id) }}" class="btn btn-ghost btn-sm">Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;">
+
+    <!-- Your Info Card -->
+    <div class="welcome-card">
+        <h2>Your Allocation Details</h2>
+        <p>{{ student.programme.name if student.programme else 'N/A' }} | {{ student.batch.start_year }}-{{ student.batch.end_year if student.batch else 'N/A' }}</p>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+        <div class="stat-card">
+            <div class="number" style="color:var(--accent);">#{{ data.student.merit_rank }}</div>
+            <div class="label">Merit Rank (of {{ data.student.total_students }})</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" style="color:var(--blue);">{{ data.student.qualifying_marks }}</div>
+            <div class="label">Your Marks</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" style="font-size:1.2rem; color:var(--purple);">{{ data.student.reservation_category }}</div>
+            <div class="label">Category</div>
+        </div>
+        <div class="stat-card">
+            {% if data.allocation.status == 'Allocated' %}
+            <div class="number" style="font-size:1rem; color:var(--green);">{{ data.allocation.course_code }}</div>
+            <div class="label">Allocated (Pref #{{ data.allocation.preference_number }})</div>
+            {% elif data.allocation.status == 'Waitlisted' %}
+            <div class="number" style="font-size:1rem; color:var(--amber);">{{ data.allocation.course_code }}</div>
+            <div class="label">Waitlisted</div>
+            {% else %}
+            <div class="number" style="font-size:1rem; color:var(--text-muted);">-</div>
+            <div class="label">{{ data.allocation.status }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Preference Journey -->
+    {% if data.journey %}
+    <div class="card">
+        <div class="card-header">
+            <h2>Preference Journey</h2>
+            <p>Step-by-step walkthrough of your allocation process</p>
+        </div>
+
+        <div class="timeline">
+            {% for step in data.journey %}
+            <div class="timeline-item {{ 'allocated' if step.outcome == 'ALLOCATED' else 'full' if step.outcome == 'SEATS_FULL' else 'skipped' }}">
+                <div class="timeline-marker">{{ step.priority }}</div>
+                <div class="timeline-content">
+                    <h4>{{ step.course_code }} - {{ step.course_name }}</h4>
+                    <div class="timeline-details">
+                        <span>Your Marks: <strong>{{ step.student_marks }}</strong></span>
+                        <span>Cutoff ({{ data.student.reservation_category }}): <strong>{{ step.cutoff_marks }}</strong></span>
+                        <span>Seats: {{ step.seats_filled }}/{{ step.seats_total }}</span>
+                    </div>
+                    <div class="timeline-outcome">
+                        {% if step.outcome == 'ALLOCATED' %}
+                        <span class="badge badge-success">ALLOCATED</span>
+                        {% elif step.outcome == 'SEATS_FULL' %}
+                        <span class="badge badge-danger">SEATS FULL</span>
+                        {% else %}
+                        <span class="badge" style="background:rgba(148,163,184,0.15); color:var(--text-muted);">NOT REACHED</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Course Cutoff Table -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Course Cutoff Table</h2>
+            <p>Anonymized cutoff marks for all courses in the pool</p>
+        </div>
+
+        <div class="table-container" style="border:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Total</th>
+                        <th>Filled</th>
+                        <th>General</th>
+                        <th>EWS</th>
+                        <th>OBC</th>
+                        <th>SC</th>
+                        <th>ST</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in data.cutoff_table %}
+                    <tr>
+                        <td>
+                            <strong>{{ c.course_code }}</strong><br>
+                            <span style="font-size:0.82rem; color:var(--text-secondary);">{{ c.course_name }}</span>
+                        </td>
+                        <td>{{ c.total_seats }}</td>
+                        <td>{{ c.filled_seats }}</td>
+                        {% for cat in ['General', 'EWS', 'OBC', 'SC', 'ST'] %}
+                        <td>
+                            {% if c.categories[cat].cutoff == 'Open' %}
+                            <span style="color:var(--green); font-weight:600;">Open</span>
+                            {% else %}
+                            {{ c.categories[cat].cutoff }}
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="text-align:center; margin-top:20px;">
+        <a href="{{ url_for('student_dashboard', student_id=student.id) }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

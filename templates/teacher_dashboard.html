@@ -1,217 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard - EMS Portal{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+{% block topbar_left %}
+<span class="breadcrumb"><span class="current">Teacher Portal</span></span>
+{% endblock %}
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
-            color: #fff;
-        }
+{% block topbar_right %}
+<span style="color:var(--text-secondary); font-size:0.88rem;">{{ teacher.name }}</span>
+<a href="{{ url_for('roles') }}" class="btn btn-ghost btn-sm">Logout</a>
+{% endblock %}
 
-        .navbar {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(10px);
-        }
+{% block content %}
+<div style="max-width:1000px;">
+    <div class="welcome-card" style="background:linear-gradient(135deg, var(--amber), #d97706);">
+        <h2>Welcome, {{ teacher.name }}!</h2>
+        <p>{{ teacher.designation.value if teacher.designation else '' }} | {{ teacher.department.name if teacher.department else 'N/A' }}</p>
+    </div>
 
-        .navbar h1 {
-            font-size: 1.5rem;
-        }
+    <div class="card">
+        <div class="card-header"><h2>Your Courses</h2></div>
 
-        .navbar a {
-            color: #fff;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 30px;
-        }
-
-        .welcome-card {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-        }
-
-        .welcome-card h2 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-        }
-
-        .welcome-card p {
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .section {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-
-        .section h3 {
-            margin-bottom: 20px;
-            color: #e2e8f0;
-        }
-
-        .course-card {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .course-card h4 {
-            color: #fbbf24;
-            margin-bottom: 10px;
-            font-size: 1.2rem;
-        }
-
-        .course-card .meta {
-            color: #94a3b8;
-            margin-bottom: 15px;
-        }
-
-        .course-card .meta span {
-            margin-right: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th,
-        td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        th {
-            background: rgba(255, 255, 255, 0.05);
-            color: #94a3b8;
-            font-weight: 600;
-        }
-
-        td {
-            color: #e2e8f0;
-        }
-
-        tr:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .badge-success {
-            background: rgba(74, 222, 128, 0.2);
-            color: #4ade80;
-        }
-
-        .badge-info {
-            background: rgba(96, 165, 250, 0.2);
-            color: #60a5fa;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .student-count {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #4ade80;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 30px;
-            color: #94a3b8;
-        }
-    </style>
-</head>
-
-<body>
-
-    <nav class="navbar">
-        <h1>👩‍🏫 Teacher Portal</h1>
-        <a href="{{ url_for('roles') }}">Logout</a>
-    </nav>
-
-    <div class="container">
-        <div class="welcome-card">
-            <h2>Welcome, {{ teacher.name }}! 👋</h2>
-            <p>{{ teacher.designation.value if teacher.designation else '' }} | {{ teacher.department.name if
-                teacher.department else 'N/A' }}</p>
-        </div>
-
-        <div class="section">
-            <h3>📚 Your Courses</h3>
-
-            {% if courses %}
-            {% for course in courses %}
-            <div class="course-card">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
-                    <div>
-                        <h4>{{ course.code }} - {{ course.name }}</h4>
-                        <div class="meta">
-                            <span>📖 {{ course.course_type.value if course.course_type else 'N/A' }}</span>
-                            <span>👥 Max Capacity: {{ course.max_capacity }}</span>
-                            <span class="student-count">{{ course.allocations|selectattr('status.value', 'eq',
-                                'Allocated')|list|length }}</span> students allocated
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <a href="{{ url_for('teacher_export_course_csv', course_id=course.id) }}" class="btn btn-secondary">📥 Export CSV</a>
-                        <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+        {% if courses %}
+        {% for course in courses %}
+        <div class="teacher-course-card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h4>{{ course.code }} - {{ course.name }}</h4>
+                    <div class="meta">
+                        <span>{{ course.course_type.value if course.course_type else 'N/A' }}</span>
+                        <span>Max Capacity: {{ course.max_capacity }}</span>
+                        <span class="student-count">{{ course.allocations|selectattr('status.value', 'eq', 'Allocated')|list|length }}</span> students allocated
                     </div>
                 </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('teacher_export_course_csv', course_id=course.id) }}" class="btn btn-secondary btn-sm">Export CSV</a>
+                </div>
+            </div>
 
-                {% set allocated_students = course.allocations|selectattr('status.value', 'eq', 'Allocated')|list %}
-                {% if allocated_students %}
+            {% set allocated_students = course.allocations|selectattr('status.value', 'eq', 'Allocated')|list %}
+            {% if allocated_students %}
+            <div class="table-container" style="margin-top:14px; border:none;">
                 <table>
                     <thead>
                         <tr>
@@ -228,28 +56,25 @@
                             <td>{{ alloc.student.roll_no }}</td>
                             <td>{{ alloc.student.name }}</td>
                             <td>{{ alloc.student.email }}</td>
-                            <td><span class="badge badge-info">{{ alloc.student.reservation_category.value if
-                                    alloc.student.reservation_category else 'General' }}</span></td>
+                            <td><span class="badge badge-info">{{ alloc.student.reservation_category.value if alloc.student.reservation_category else 'General' }}</span></td>
                             <td><span class="badge badge-success">#{{ alloc.preference_number }}</span></td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                {% else %}
-                <div class="empty-state">
-                    <p>No students allocated to this course yet.</p>
-                </div>
-                {% endif %}
             </div>
-            {% endfor %}
             {% else %}
-            <div class="empty-state">
-                <p>You are not assigned to any courses yet.</p>
+            <div class="empty-state" style="padding:20px;">
+                <p>No students allocated to this course yet.</p>
             </div>
             {% endif %}
         </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <p>You are not assigned to any courses yet.</p>
+        </div>
+        {% endif %}
     </div>
-
-</body>
-
-</html>
+</div>
+{% endblock %}

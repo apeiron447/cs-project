@@ -651,15 +651,16 @@ def api_get_course_pool(batch_id):
 
 @app.route("/admin/dashboard")
 def admin_dashboard():
-    from services import DepartmentService, ProgrammeService, StudentService, CourseService, BatchService
+    from services import DepartmentService, ProgrammeService, StudentService, CourseService, BatchService, TeacherService
     from models import Batch
-    
+
     # Get stats
     stats = {
         "departments": len(DepartmentService.get_all(db_session)),
         "programmes": len(ProgrammeService.get_all(db_session)),
         "students": len(StudentService.get_all(db_session)),
         "courses": len(CourseService.get_all(db_session)),
+        "teachers": len(TeacherService.get_all(db_session)),
     }
     
     # Get batches with eager loading
@@ -963,6 +964,87 @@ def admin_delete_student():
     return redirect(url_for("admin_students"))
 
 
+# ============================================
+# TEACHER MANAGEMENT
+# ============================================
+
+@app.route("/admin/teachers")
+def admin_teachers():
+    from services import TeacherService
+    teachers = TeacherService.get_all(db_session)
+    return render_template("teachers_list.html", teachers=teachers)
+
+
+@app.route("/admin/teacher/<int:teacher_id>/edit")
+def admin_edit_teacher(teacher_id):
+    from services import TeacherService, DepartmentService
+    teacher = TeacherService.get_by_id(db_session, teacher_id)
+    if not teacher:
+        flash("Teacher not found", "error")
+        return redirect(url_for("admin_teachers"))
+    departments = DepartmentService.get_all(db_session)
+    return render_template("edit_teacher.html", teacher=teacher, departments=departments)
+
+
+@app.route("/admin/teacher/<int:teacher_id>/update", methods=["POST"])
+def admin_update_teacher(teacher_id):
+    from services import TeacherService
+    from werkzeug.security import generate_password_hash
+    from models import Designation
+
+    teacher = TeacherService.get_by_id(db_session, teacher_id)
+    if not teacher:
+        flash("Teacher not found", "error")
+        return redirect(url_for("admin_teachers"))
+
+    try:
+        teacher.faculty_id = request.form.get("faculty_id")
+        teacher.name = request.form.get("name")
+        teacher.email = request.form.get("email")
+        teacher.contact_no = request.form.get("contact_no")
+        teacher.department_id = int(request.form.get("department_id"))
+
+        designation = request.form.get("designation")
+        designation_map = {
+            "AP": Designation.ASSISTANT_PROFESSOR,
+            "P": Designation.PROFESSOR,
+        }
+        teacher.designation = designation_map.get(designation, Designation.ASSISTANT_PROFESSOR)
+
+        # Update password if provided
+        password = request.form.get("password")
+        if password and teacher.user:
+            teacher.user.password_hash = generate_password_hash(password)
+
+        db_session.commit()
+        flash("Teacher updated successfully!", "success")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+
+    return redirect(url_for("admin_teachers"))
+
+
+@app.route("/admin/teacher/delete", methods=["POST"])
+def admin_delete_teacher():
+    from services import TeacherService
+
+    teacher_id = request.form.get("teacher_id")
+    if not teacher_id:
+        flash("Teacher ID required", "error")
+        return redirect(url_for("admin_teachers"))
+
+    try:
+        success = TeacherService.delete(db_session, int(teacher_id))
+        if success:
+            flash("Teacher deleted successfully", "success")
+        else:
+            flash("Teacher not found", "error")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
+
+    return redirect(url_for("admin_teachers"))
+
+
 @app.route("/admin/allocation-report/<int:batch_id>")
 def admin_allocation_report(batch_id):
     from services import AllocationService, BatchService
@@ -975,6 +1057,105 @@ def admin_allocation_report(batch_id):
     report = AllocationService.generate_allocation_report(db_session, batch_id)
     
     return render_template("allocation_report.html", batch=batch, report=report)
+
+
+@app.route("/admin/allocation-transparency/<int:batch_id>")
+def admin_allocation_transparency(batch_id):
+    from services import AllocationService, BatchService
+
+    batch = BatchService.get_by_id(db_session, batch_id)
+    if not batch:
+        flash("Batch not found", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    data = AllocationService.generate_transparency_data(db_session, batch_id)
+
+    return render_template("allocation_transparency.html", batch=batch, data=data)
+
+
+@app.route("/student/allocation-details/<int:student_id>")
+def student_allocation_details(student_id):
+    from services import AllocationService, StudentService
+
+    student = StudentService.get_by_id(db_session, student_id)
+    if not student:
+        flash("Student not found", "error")
+        return redirect(url_for("roles"))
+
+    if not student.batch or not student.batch.results_published:
+        flash("Allocation results have not been published yet.", "error")
+        return redirect(url_for("student_dashboard", student_id=student_id))
+
+    data = AllocationService.get_student_transparency_data(db_session, student_id)
+    if not data:
+        flash("No allocation data available.", "error")
+        return redirect(url_for("student_dashboard", student_id=student_id))
+
+    return render_template("student_allocation_details.html", student=student, data=data)
+
+
+@app.route("/admin/export/transparency/<int:batch_id>")
+def admin_export_transparency_csv(batch_id):
+    import csv
+    import io
+    from flask import Response
+    from models import Batch
+    from services import AllocationService
+
+    batch = db_session.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        flash("Batch not found", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    data = AllocationService.generate_transparency_data(db_session, batch_id)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Merit Rank", "Admission No", "Name", "Marks", "Category",
+        "Preferences", "Allocated Course", "Preference #", "Status"
+    ])
+    for m in data["merit_list"]:
+        prefs_str = "; ".join(
+            f"{p['priority']}. {p['course_code']}" for p in m["preferences"]
+        )
+        writer.writerow([
+            m["merit_rank"],
+            m["admission_no"],
+            m["name"],
+            m["qualifying_marks"],
+            m["reservation_category"],
+            prefs_str,
+            m["allocated_course_code"],
+            m["preference_number"] or "-",
+            m["allocation_status"],
+        ])
+
+    # Add course cutoffs section
+    writer.writerow([])
+    writer.writerow(["--- Course Cutoffs ---"])
+    writer.writerow(["Course Code", "Course Name", "Total Seats", "Filled",
+                      "General Cutoff", "EWS Cutoff", "OBC Cutoff", "SC Cutoff", "ST Cutoff"])
+    for c in data["course_cutoffs"]:
+        writer.writerow([
+            c["course_code"],
+            c["course_name"],
+            c["total_seats"],
+            c["filled_seats"],
+            c["category_cutoffs"]["General"]["cutoff_marks"],
+            c["category_cutoffs"]["EWS"]["cutoff_marks"],
+            c["category_cutoffs"]["OBC"]["cutoff_marks"],
+            c["category_cutoffs"]["SC"]["cutoff_marks"],
+            c["category_cutoffs"]["ST"]["cutoff_marks"],
+        ])
+
+    output.seek(0)
+    batch_label = f"{batch.programme.name}_{batch.start_year}" if batch.programme else f"batch_{batch_id}"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=transparency_{batch_label}.csv"},
+    )
 
 
 @app.route("/student/dashboard/<int:student_id>")

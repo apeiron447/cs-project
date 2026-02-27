@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Allocation Transparency - EMS Portal{% endblock %}
+{% block body_class %}has-sidebar{% endblock %}
+
+{% block sidebar %}{% include "includes/admin_sidebar.html" %}{% endblock %}
+
+{% block topbar_left %}
+<span class="breadcrumb">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="{{ url_for('admin_allocation_report', batch_id=batch.id) }}">Allocation Report</a>
+    <span class="sep">/</span>
+    <span class="current">Transparency</span>
+</span>
+{% endblock %}
+
+{% block topbar_right %}
+<a href="{{ url_for('admin_export_transparency_csv', batch_id=batch.id) }}" class="btn btn-secondary btn-sm">Export CSV</a>
+{% endblock %}
+
+{% block content %}
+<div style="text-align:center; margin-bottom:28px;">
+    <h1 style="color:var(--accent); font-size:1.6rem;">{{ batch.programme.name if batch.programme else 'Batch' }} ({{ batch.start_year }}-{{ batch.end_year }})</h1>
+    <p style="color:var(--text-secondary); margin-top:8px;">Semester {{ batch.current_semester }} | Detailed Allocation Transparency Report</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="number" style="color:var(--blue);">{{ data.summary.total_students }}</div>
+        <div class="label">Total Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="number" style="color:var(--green-light);">{{ data.summary.allocated }}</div>
+        <div class="label">Allocated</div>
+    </div>
+    <div class="stat-card">
+        <div class="number" style="color:var(--amber);">{{ data.summary.waitlisted }}</div>
+        <div class="label">Waitlisted</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ data.summary.no_preference }}</div>
+        <div class="label">No Preference</div>
+    </div>
+    <div class="stat-card">
+        <div class="number" style="color:var(--green);">{{ data.summary.first_pref_rate }}%</div>
+        <div class="label">1st Pref Rate</div>
+    </div>
+    <div class="stat-card">
+        <div class="number" style="color:var(--purple);">{{ data.summary.avg_pref_fulfilled }}</div>
+        <div class="label">Avg Pref #</div>
+    </div>
+</div>
+
+<!-- Merit List -->
+<div class="card">
+    <div class="card-header">
+        <h2>Merit List</h2>
+        <p>All students ranked by qualifying marks</p>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="merit-search" placeholder="Search by name, admission no, category, or status..." oninput="filterMeritTable()">
+    </div>
+
+    <div class="table-container" style="border:none;">
+        <table id="merit-table">
+            <thead>
+                <tr>
+                    <th class="sortable" onclick="sortTable(0, 'num')">Rank</th>
+                    <th>Admission No</th>
+                    <th>Name</th>
+                    <th class="sortable" onclick="sortTable(3, 'num')">Marks</th>
+                    <th>Category</th>
+                    <th>Preferences</th>
+                    <th>Allocated Course</th>
+                    <th class="sortable" onclick="sortTable(7, 'num')">Pref #</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in data.merit_list %}
+                <tr class="{% if m.allocation_status == 'Allocated' %}status-allocated{% elif m.allocation_status == 'Waitlisted' %}status-waitlisted{% elif m.allocation_status == 'No Preference' %}status-nopref{% endif %}"
+                    data-search="{{ m.name|lower }} {{ m.admission_no|lower }} {{ m.reservation_category|lower }} {{ m.allocation_status|lower }}">
+                    <td>{{ m.merit_rank }}</td>
+                    <td>{{ m.admission_no }}</td>
+                    <td>{{ m.name }}</td>
+                    <td>{{ m.qualifying_marks }}</td>
+                    <td><span class="badge badge-info">{{ m.reservation_category }}</span></td>
+                    <td>
+                        {% for p in m.preferences %}
+                        <span style="font-size:0.82rem; color:var(--text-secondary);">{{ p.priority }}. {{ p.course_code }}</span>{% if not loop.last %}<br>{% endif %}
+                        {% endfor %}
+                        {% if not m.preferences %}<span style="color:var(--text-muted);">-</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if m.allocated_course_code != '-' %}
+                        <strong>{{ m.allocated_course_code }}</strong><br>
+                        <span style="font-size:0.82rem; color:var(--text-secondary);">{{ m.allocated_course_name }}</span>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{{ m.preference_number if m.preference_number else '-' }}</td>
+                    <td>
+                        {% if m.allocation_status == 'Allocated' %}
+                        <span class="badge badge-success">Allocated</span>
+                        {% elif m.allocation_status == 'Waitlisted' %}
+                        <span class="badge badge-warning">Waitlisted</span>
+                        {% else %}
+                        <span class="badge" style="background:rgba(148,163,184,0.15); color:var(--text-muted);">{{ m.allocation_status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Course Cutoffs -->
+<div class="card">
+    <div class="card-header">
+        <h2>Course Cutoffs</h2>
+        <p>Category-wise cutoff marks and seat fill status</p>
+    </div>
+
+    {% for c in data.course_cutoffs %}
+    <div class="course-cutoff-card">
+        <div class="course-expand-toggle" onclick="this.parentElement.classList.toggle('expanded')">
+            <div>
+                <strong style="color:var(--accent);">{{ c.course_code }}</strong> - {{ c.course_name }}
+                <span style="color:var(--text-muted); font-size:0.85rem; margin-left:12px;">{{ c.filled_seats }}/{{ c.total_seats }} seats filled</span>
+            </div>
+            <span class="expand-arrow">&#9662;</span>
+        </div>
+
+        <div class="course-expand-content">
+            <table style="margin-bottom:16px;">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Total Seats</th>
+                        <th>Filled</th>
+                        <th>Cutoff Marks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat, info in c.category_cutoffs.items() %}
+                    <tr>
+                        <td><span class="badge badge-info">{{ cat }}</span></td>
+                        <td>{{ info.seats_total }}</td>
+                        <td>{{ info.seats_filled }}</td>
+                        <td>
+                            {% if info.cutoff_marks == 'Open' %}
+                            <span style="color:var(--green);">Open</span>
+                            {% else %}
+                            {{ info.cutoff_marks }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="margin-bottom:12px;">
+                <strong style="font-size:0.88rem;">Preference Distribution:</strong>
+                <span style="font-size:0.85rem; color:var(--text-secondary); margin-left:8px;">
+                    1st: {{ c.preference_distribution[1] }} |
+                    2nd: {{ c.preference_distribution[2] }} |
+                    3rd: {{ c.preference_distribution[3] }} |
+                    4+: {{ c.preference_distribution["4+"] }}
+                </span>
+            </div>
+
+            {% if c.allocated_students %}
+            <details>
+                <summary style="cursor:pointer; color:var(--accent); font-size:0.88rem; font-weight:600; margin-bottom:8px;">
+                    View Allocated Students ({{ c.allocated_students|length }})
+                </summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Admission No</th>
+                            <th>Name</th>
+                            <th>Marks</th>
+                            <th>Category</th>
+                            <th>Pref #</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in c.allocated_students %}
+                        <tr>
+                            <td>{{ s.merit_rank }}</td>
+                            <td>{{ s.admission_no }}</td>
+                            <td>{{ s.name }}</td>
+                            <td>{{ s.marks }}</td>
+                            <td><span class="badge badge-info">{{ s.category }}</span></td>
+                            <td>{{ s.pref_number }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterMeritTable() {
+    const query = document.getElementById('merit-search').value.toLowerCase();
+    const rows = document.querySelectorAll('#merit-table tbody tr');
+    rows.forEach(row => {
+        const text = row.getAttribute('data-search') || '';
+        row.style.display = text.includes(query) ? '' : 'none';
+    });
+}
+
+function sortTable(colIndex, type) {
+    const table = document.getElementById('merit-table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    // Determine sort direction
+    const th = table.querySelectorAll('th')[colIndex];
+    const asc = !th.classList.contains('sort-asc');
+    table.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+    th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+
+    rows.sort((a, b) => {
+        let va = a.cells[colIndex].textContent.trim();
+        let vb = b.cells[colIndex].textContent.trim();
+        if (type === 'num') {
+            va = va === '-' ? Infinity : parseFloat(va);
+            vb = vb === '-' ? Infinity : parseFloat(vb);
+        }
+        if (va < vb) return asc ? -1 : 1;
+        if (va > vb) return asc ? 1 : -1;
+        return 0;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+{% endblock %}

@@ -1,128 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Programme - EMS Portal{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Programme</title>
-    <style>
-        body {
-            background-color: #ffffff;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .form-container {
-            background-color: #ffffff;
-            padding: 30px 40px;
-            border-radius: 15px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-            width: 400px;
-        }
-
-        h2 {
-            text-align: center;
-            color: #ffb380;
-            margin-bottom: 10px;
-            font-size: 24px;
-        }
-
-        h2::after {
-            content: "";
-            display: block;
-            width: 100%;
-            height: 3px;
-            background-color: #ffb380;
-            margin: 10px auto 20px auto;
-            border-radius: 2px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        input[type="text"],
-        select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #ffb380;
-            color: #ffffff;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #ffa366;
-        }
-
-        .flash-message {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .flash-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .flash-error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="form-container">
-        <h2>Programme</h2>
+{% block layout %}
+<div class="form-layout">
+    <div class="form-page">
+        <a href="{{ url_for('roles') }}" class="back-link">&larr; Back to Home</a>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
-        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        <div class="alert alert-{{ category }}">{{ message }}</div>
         {% endfor %}
         {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('programme_form') }}" method="POST">
-            <label for="department">Select Department</label>
-            <select name="department" id="department" required>
-                <option value="">-- Select Department --</option>
-                {% for dept in departments %}
-                <option value="{{ dept.code }}">{{ dept.name }}</option>
-                {% endfor %}
-            </select>
+        <div class="card" style="max-width:450px; margin:0 auto;">
+            <div class="card-header"><h2>Create Programme</h2></div>
 
-            <label for="programme_name">Programme Name</label>
-            <input type="text" name="programme_name" id="programme_name" placeholder="Enter Programme Name" required>
-
-            <button type="submit">Save Programme</button>
-        </form>
+            <form action="{{ url_for('programme_form') }}" method="POST">
+                <div class="form-group">
+                    <label>Select Department</label>
+                    <select name="department" required>
+                        <option value="">-- Select Department --</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.code }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Programme Name</label>
+                    <input type="text" name="programme_name" placeholder="Enter Programme Name" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Programme</button>
+                </div>
+            </form>
+        </div>
     </div>
-
-</body>
-
-</html>
+</div>
+{% endblock %}

@@ -1,148 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Create Course - EMS Portal{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Profile</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f4f7f6;
-            padding: 20px;
-        }
-
-        .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 25px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        h2 {
-            color: #6f42c1;
-            border-bottom: 2px solid #6f42c1;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: #6f42c1;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .flash-message {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .flash-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .flash-error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        small {
-            color: #666;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="form-container">
-        <h2>Course Profile </h2>
+{% block layout %}
+<div class="form-layout">
+    <div class="form-page">
+        <a href="{{ url_for('roles') }}" class="back-link">&larr; Back to Home</a>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
-        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        <div class="alert alert-{{ category }}">{{ message }}</div>
         {% endfor %}
         {% endif %}
         {% endwith %}
 
-        <form action="/api/admin/create-course" method="POST">
-            <div class="form-group">
-                <label for="c-code">Course Code </label>
-                <input type="text" id="c-code" name="course_code" placeholder="e.g., CS101" required>
-            </div>
-            <div class="form-group">
-                <label for="c-name">Course Name</label>
-                <input type="text" id="c-name" name="course_name" required>
-            </div>
-            <div class="form-group">
-                <label for="c-type">Course Type</label>
-                <select id="c-type" name="course_type" required>
-                    <option value="Minor">Minor</option>
-                    <option value="MDC">MDC</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="c-offering-dept">Offering Department</label>
-                <select id="c-offering-dept" name="offering_department" required>
-                    <option value="">Select Department</option>
-                    {% for dept in departments %}
-                    <option value="{{ dept.name }}">{{ dept.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="c-max-capacity">Max Capacity </label>
-                <input type="number" id="c-max-capacity" name="max_capacity" min="1" required>
-            </div>
-            <div class="form-group">
-                <label for="c-teacher">Assigned Teacher</label>
-                <select id="c-teacher" name="assigned_teacher">
-                    <option value="">Select Teacher (Optional)</option>
-                    {% for teacher in teachers %}
-                    <option value="{{ teacher.id }}">{{ teacher.name }} ({{ teacher.department.name if
-                        teacher.department else 'N/A' }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="c-reserved-seats">Reserved Seats (%)</label>
-                <input type="number" id="c-reserved-seats" name="reserved_seats_percent" min="0" max="100" step="1"
-                    value="50" required>
-                <small>e.g., Enter 50 for 50% reservation (SC/ST/OBC/EWS)</small>
-            </div>
-            <button type="submit">Create Course</button>
-        </form>
+        <div class="card">
+            <div class="card-header"><h2>Create Course</h2></div>
+
+            <form action="/api/admin/create-course" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Course Code</label>
+                        <input type="text" name="course_code" placeholder="e.g., CS101" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Course Type</label>
+                        <select name="course_type" required>
+                            <option value="Minor">Minor</option>
+                            <option value="MDC">MDC</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Course Name</label>
+                    <input type="text" name="course_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Offering Department</label>
+                    <select name="offering_department" required>
+                        <option value="">Select Department</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.name }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max Capacity</label>
+                        <input type="number" name="max_capacity" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Reserved Seats (%)</label>
+                        <input type="number" name="reserved_seats_percent" min="0" max="100" step="1" value="50" required>
+                        <p class="form-hint">e.g., 50 for 50% reservation</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Assigned Teacher</label>
+                    <select name="assigned_teacher">
+                        <option value="">Select Teacher (Optional)</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">{{ teacher.name }} ({{ teacher.department.name if teacher.department else 'N/A' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create Course</button>
+                </div>
+            </form>
+        </div>
     </div>
-
-</body>
-
-</html>
+</div>
+{% endblock %}

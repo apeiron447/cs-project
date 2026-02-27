@@ -1,0 +1,48 @@
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🎓</span>
+        <h2>EMS Portal</h2>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="sidebar-section">Main</div>
+        <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+            <span class="icon">📊</span> Dashboard
+        </a>
+        <a href="{{ url_for('admin_courses') }}" class="sidebar-link {% if request.endpoint in ['admin_courses', 'admin_edit_course', 'admin_update_course', 'admin_seat_matrix'] %}active{% endif %}">
+            <span class="icon">📚</span> Courses
+        </a>
+        <a href="{{ url_for('admin_students') }}" class="sidebar-link {% if request.endpoint in ['admin_students', 'admin_edit_student', 'admin_student_academic'] %}active{% endif %}">
+            <span class="icon">👨‍🎓</span> Students
+        </a>
+        <a href="{{ url_for('admin_teachers') }}" class="sidebar-link {% if request.endpoint in ['admin_teachers', 'admin_edit_teacher'] %}active{% endif %}">
+            <span class="icon">👨‍🏫</span> Teachers
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">Tools</div>
+        <a href="{{ url_for('admin_ai_status') }}" class="sidebar-link {% if request.endpoint == 'admin_ai_status' %}active{% endif %}">
+            <span class="icon">🤖</span> AI Module
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">Create</div>
+        <a href="{{ url_for('department_form') }}" class="sidebar-link">
+            <span class="icon">🏫</span> Department
+        </a>
+        <a href="{{ url_for('programme_form') }}" class="sidebar-link">
+            <span class="icon">📘</span> Programme
+        </a>
+        <a href="{{ url_for('add_batch_form') }}" class="sidebar-link">
+            <span class="icon">📅</span> Batch
+        </a>
+        <a href="{{ url_for('course_form') }}" class="sidebar-link">
+            <span class="icon">📖</span> Course
+        </a>
+        <a href="{{ url_for('student_form') }}" class="sidebar-link">
+            <span class="icon">👤</span> Student
+        </a>
+        <a href="{{ url_for('teacher_form') }}" class="sidebar-link">
+            <span class="icon">👩‍🏫</span> Teacher
+        </a>
+    </nav>
+</aside>

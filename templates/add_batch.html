@@ -1,140 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Create Batch - EMS Portal{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Batch</title>
-
-    <style>
-        body {
-            background-color: #f5f9f8;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 40px;
-        }
-
-        .form-card {
-            width: 600px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        h2 {
-            margin-bottom: 15px;
-            color: #008c9e;
-            font-size: 26px;
-            font-weight: bold;
-        }
-
-        .underline {
-            width: 100%;
-            height: 3px;
-            background-color: #00a6b9;
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            font-size: 15px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: #00a6b9;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #008c9e;
-        }
-
-        .flash-message {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .flash-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .flash-error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="form-card">
-        <h2>Batch</h2>
-        <div class="underline"></div>
+{% block layout %}
+<div class="form-layout">
+    <div class="form-page">
+        <a href="{{ url_for('roles') }}" class="back-link">&larr; Back to Home</a>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
-        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        <div class="alert alert-{{ category }}">{{ message }}</div>
         {% endfor %}
         {% endif %}
         {% endwith %}
 
-        <form action="/save_batch" method="POST">
+        <div class="card">
+            <div class="card-header"><h2>Create Batch</h2></div>
 
-            <label>Programme</label>
-            <select name="programme" required>
-                <option value="" disabled selected>Select Programme</option>
-                {% for prog in programmes %}
-                <option value="{{ prog.name }}">{{ prog.name }} ({{ prog.department.name if prog.department else 'N/A'
-                    }})</option>
-                {% endfor %}
-            </select>
-
-            <label>Start Year</label>
-            <input type="number" name="start_year" placeholder="2024" min="2020" max="2030" required>
-
-            <label>End Year</label>
-            <input type="number" name="end_year" placeholder="2027" min="2020" max="2035" required>
-
-            <label>Semester</label>
-            <select name="semester" required>
-                <option value="" disabled selected>Select Semester</option>
-                <option value="Semester 1">Semester 1</option>
-                <option value="Semester 2">Semester 2</option>
-                <option value="Semester 3">Semester 3</option>
-                <option value="Semester 4">Semester 4</option>
-                <option value="Semester 5">Semester 5</option>
-                <option value="Semester 6">Semester 6</option>
-                <option value="Semester 7">Semester 7</option>
-                <option value="Semester 8">Semester 8</option>
-            </select>
-
-            <button type="submit">Create Batch</button>
-        </form>
+            <form action="/save_batch" method="POST">
+                <div class="form-group">
+                    <label>Programme</label>
+                    <select name="programme" required>
+                        <option value="" disabled selected>Select Programme</option>
+                        {% for prog in programmes %}
+                        <option value="{{ prog.name }}">{{ prog.name }} ({{ prog.department.name if prog.department else 'N/A' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Year</label>
+                        <input type="number" name="start_year" placeholder="2024" min="2020" max="2030" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Year</label>
+                        <input type="number" name="end_year" placeholder="2027" min="2020" max="2035" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Semester</label>
+                    <select name="semester" required>
+                        <option value="" disabled selected>Select Semester</option>
+                        <option value="Semester 1">Semester 1</option>
+                        <option value="Semester 2">Semester 2</option>
+                        <option value="Semester 3">Semester 3</option>
+                        <option value="Semester 4">Semester 4</option>
+                        <option value="Semester 5">Semester 5</option>
+                        <option value="Semester 6">Semester 6</option>
+                        <option value="Semester 7">Semester 7</option>
+                        <option value="Semester 8">Semester 8</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create Batch</button>
+                </div>
+            </form>
+        </div>
     </div>
-
-</body>
-
-</html>
+</div>
+{% endblock %}
