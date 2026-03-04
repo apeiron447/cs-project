@@ -760,7 +760,7 @@ def admin_delete_batch():
 @app.route("/admin/courses")
 def admin_courses():
     from services import CourseService
-    courses = CourseService.get_all(db_session, active_only=False)
+    courses = CourseService.get_all(db_session, active_only=True)
     return render_template("courses_list.html", courses=courses)
 
 
